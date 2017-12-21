@@ -36,7 +36,7 @@ def nRV_calculator(Kdetsig,
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
     band_strs, R, aperture, throughput, RVnoisefloor, centralwl, SNRtarget, \
-        texpmin, texpmax, toverhead = \
+        transmission_threshold, texpmin, texpmax, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
     assert texpmin < texpmax
     assert mags.size == band_strs.size
@@ -48,7 +48,9 @@ def nRV_calculator(Kdetsig,
         sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
                                                vsini, R, aperture, throughput,
                                                RVnoisefloor, centralwl,
-                                               SNRtarget, texpmin, texpmax)
+                                               SNRtarget,
+                                               transmission_threshold, texpmin,
+                                               texpmax)
         sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
         sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
                         else float(sigRV_planets)
@@ -99,7 +101,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     f.close()
     return np.ascontiguousarray(list(g[5])[:-1]), float(g[7]), float(g[9]), \
         float(g[11]), float(g[13]), float(g[15]), float(g[17]), float(g[19]), \
-        float(g[21]), float(g[23])
+        float(g[21]), float(g[23]), float(g[25])
 
 
 def _read_sigRV_input(input_sigRV_fname):
@@ -122,7 +124,7 @@ def _compute_logg(Ms, Rs):
 
 def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
                         throughput, RVnoisefloor, centralwl, SNRtarget,
-                        texpmin, texpmax):
+                        transmission_threshold, texpmin, texpmax):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
     full spectral domain.
@@ -148,7 +150,8 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
                                         band_strs[i], R, centralwl*1e-3,
                                         SNRtarget)
         sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
-                                      aperture, throughput, R, SNRtarget)
+                                      aperture, throughput, R,
+                                      transmission_threshold, SNRtarget)
         print 'Took %.1f seconds\n'%(time.time()-t0)
         
     # compute sigmaRV over all bands

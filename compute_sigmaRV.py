@@ -49,7 +49,8 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R,
         spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini)
     wl_resamp, spec_resamp = _resample_spectrum(wl_conv, spec_conv, R,
                                                 centralwl)
-    spec_scaled = _cgs2Nphot(wl, spectrum, wl_resamp, spec_resamp, SNRtarget)
+    spec_scaled = _cgs2Nphot(wl, spectrum, wl_resamp, spec_resamp, centralwl,
+                             SNRtarget)
     return wl_resamp, spec_scaled
 
 
@@ -151,7 +152,7 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R):
     FWHM_microns = wl_central_microns / float(R)
     sigma_microns = FWHM_microns / (2*np.sqrt(2*np.log(2)))
     print 'Convolving the %s band stellar spectrum to the '%band_str + \
-        'instrumental resolution (R=%i)'%R
+        'instrumental resolution (R = %i)'%R
     try:
         spectrum_conv = broadGaussFast(wl_band, spectrum_band, sigma_microns)
     except NameError: # no convolution is bad
@@ -272,7 +273,7 @@ def _get_band_range(band_str):
     
 
 def _cgs2Nphot(wl_full_microns, spec_full_cgs, wl_band_microns, spec_band_cgs,
-	       SNRtarget):
+	       centralwl, SNRtarget):
     '''
     Convert the input spectrum from cgs units (erg/s/cm^2/cm) to a the number 
     of photons with a fixed SNR at the center of the J band (1.25 microns).
@@ -289,7 +290,12 @@ def _cgs2Nphot(wl_full_microns, spec_full_cgs, wl_band_microns, spec_band_cgs,
         Spectral array of wavelengths (in microns) across a single spectral band
     `spec_band_cgs': array-like
         Stellar spectrum array (in erg/s/cm^2/cm) across a single spectral band
-    
+    `centralwl': scalar
+        The reference wavelength where the instrument resolution and SNR are 
+        specified in microns
+    `SNRtarget': scalar
+        Target SNR per resolution element to be obtained during an exposure
+
     Results
     -------
     `spec_Nphot_scaled': numpy.array
@@ -494,7 +500,7 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture, throughput, R,
         return float(fint(SNRtarget))
 
 
-def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold=.02):
+def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold):
     '''
     Remove wavelengths that are sampled at wavelengths affected by tellurics 
     at the level more than a specified threshold.
@@ -582,7 +588,7 @@ def compute_W(wl_band, spec_band):
 
 
 def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture,
-                    throughput, R, SNRtarget):
+                    throughput, R, transmission_threshold, SNRtarget):
     '''
     Compute the photon-noise limit of the RV precision from the information 
     content in the spectrum, over a particular band, and the characteristics 
@@ -607,6 +613,11 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture,
         The quantum efficiency of the detector (0<throughput<=1)
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
+    `transmission_threshold': scalar
+        Maximum fractional absorption from tellurics. Only keep where 
+        transmission is greater than 1 - `transmission_threshold'
+    `SNRtarget': scalar
+        Target SNR per resolution element to be obtained during an exposure
 
     Returns
     -------
@@ -618,7 +629,8 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture,
     W = compute_W(wl_band, spec_band)
     
     # remove tellurics
-    W_clean = _remove_tellurics_from_W(band_str, wl_band, W)
+    W_clean = _remove_tellurics_from_W(band_str, wl_band, W,
+                                       transmission_threshold)
     g = np.arange(W_clean.size) #np.arange(4, W_clean.size-4, dtype=int)
     sigmaRV = c / np.sqrt(np.sum(W_clean[g]))
 
