@@ -39,35 +39,26 @@ def nRV_calculator(Kdetsig, input_planet_fname='./user_planet.in',
         
     assert mags.size == band_strs.size
 
-    # get round values for PHOENIX stellar models
-    Teffs = np.append(np.arange(23e2,7e3,1e2), np.arange(7e3,121e2,2e2))
-    Teff_round = Teffs[abs(Teffs-Teff) == np.min(abs(Teffs-Teff))][0]
-    loggs = np.arange(0, 6.1, .5)
-    logg = float(unp.nominal_values(_compute_logg_round(Ms, Rs)))
-    logg_round = loggs[abs(loggs-logg) == np.min(abs(loggs-logg))][0]
-    Zs = np.append(np.arange(-4,-1,dtype=float), np.arange(-1.5,1.5,.5))
-    Z_round = Zs[abs(Zs-Z) == np.min(abs(Zs-Z))][0]
-    
-    sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff_round,
-                                           logg_round, Z_round, R, aperture,
-                                           throughput, RVnoisefloor, texpmin,
+    # get RV noise sources
+    logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
+    sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
+                                           R, aperture, throughput,
+                                           RVnoisefloor, SNRtarget, texpmin,
                                            texpmax)
-
     sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
-
     sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
                     else float(sigRV_planets)
-
     sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planets**2)
 
+    # get target K measurement uncertainty
     mp = _get_planet_mass(float(unp.nominal_values(rp))) if mp == 0 \
          else float(mp)
     sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
-    
-    Nrv = 2. * (sigRV_eff / sigK_target)**2
 
+    # compute observing requirements
+    Nrv = 2. * (sigRV_eff / sigK_target)**2
     tobs = Nrv * (texp + toverhead) / 60  # in hours
-    
+
     return Nrv, tobs
 
     
@@ -78,7 +69,8 @@ def _read_planet_input(input_planet_fname):
     f = open(input_planet_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[5]), unp.uarray(g[8].split(',')[0], g[8].split(',')[1])
+    return float(g[5]), unp.uarray(g[8].split(',')[0], g[8].split(',')[1]), \
+        float(g[11])
 
 
 def _read_star_input(input_star_fname):
@@ -110,15 +102,23 @@ def _compute_logg(Ms, Rs):
     Compute stellar logg in cgs units.
     '''
     Ms, Rs = rvs.Msun2kg(Ms), rvs.Rsun2m(Rs)
-    return np.log10(G * Ms / Rs**2 * 1e2)
+    return unp.log10(G * Ms / Rs**2 * 1e2)
 
 
 def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, R, aperture,
-                        throughput, RVnoisefloor, texpmin, texpmax):
+                        throughput, RVnoisefloor, SNRtarget, texpmin, texpmax):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
     full spectral domain.
     '''
+    # get round values for PHOENIX stellar models
+    Teffs = np.append(np.arange(23e2,7e3,1e2), np.arange(7e3,121e2,2e2))
+    Teff_round = Teffs[abs(Teffs-Teff) == np.min(abs(Teffs-Teff))][0]
+    loggs = np.arange(0, 6.1, .5)
+    logg_round = loggs[abs(loggs-logg) == np.min(abs(loggs-logg))][0]
+    Zs = np.append(np.arange(-4,-1,dtype=float), np.arange(-1.5,1.5,.5))
+    Z_round = Zs[abs(Zs-Z) == np.min(abs(Zs-Z))][0]
+
     # get exposure time
     texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
                                              throughput, R, SNRtarget,
@@ -127,7 +127,8 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, R, aperture,
     # compute sigmaRV in each band for a fixed texp
     sigmaRVs = np.zeros(mags.size)
     for i in range(sigmaRVs.size):
-        wl, spec = get_reduced_spectrum(Teff, logg, Z, vsini, band_strs[i], R)
+        wl, spec = get_reduced_spectrum(Teff_round, logg_round, Z_round, vsini,
+                                        band_strs[i], R)
         sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
                                       aperture, throughput, R)
 

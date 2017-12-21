@@ -4,6 +4,9 @@
 ## this file.
 ## Orbital period (in days)
 1.629
-## Planetary Radius and 1 sigma uncertainty as comma-separated values 
+## Planetary radius and 1 sigma uncertainty as comma-separated values 
 ## (in Earth radii)
 1.16,0.11
+## Planetary mass (in Earth masses). Set to zero to instead estimate the 
+## planetary mass from the radius and mass-radius relationship
+0

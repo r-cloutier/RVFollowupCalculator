@@ -12,12 +12,12 @@ from PyAstronomy.pyasl import broadGaussFast, rotBroad
 from scipy.misc import derivative
 
 
-global c, h, bands, SNRtarget, centralwlSNR
-c, h, SNRtarget, centralwlSNR = 299792458., 6.62607004e-34, 3e2, 1.25
+global c, h, bands, centralwlSNR
+c, h, centralwlSNR = 299792458., 6.62607004e-34, 1.25
 bands = ['U','B','V','R','I','Y','J','H','K']
 
 
-def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, pltt=False):
+def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, SNRtarget):
     '''
     Download a PHOENIX stellar model spectrum and reduce the spectrum over 
     a particular spectral bin via convolution with the instrumental resolution 
@@ -57,7 +57,7 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, pltt=False):
         spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini,
                                             band_str, pltt=pltt)
     wl_resamp, spec_resamp = _resample_spectrum(wl_conv, spec_conv, R)
-    spec_scaled = _cgs2Nphot(wl, spectrum, wl_resamp, spec_resamp)
+    spec_scaled = _cgs2Nphot(wl, spectrum, wl_resamp, spec_resamp, SNRtarget)
     return wl_resamp, spec_scaled
 
 
@@ -294,7 +294,8 @@ def get_band_range(band_str):
     return wlmin, wlmax, wlcentral
     
 
-def _cgs2Nphot(wl_full_microns, spec_full_cgs, wl_band_microns, spec_band_cgs):
+def _cgs2Nphot(wl_full_microns, spec_full_cgs, wl_band_microns, spec_band_cgs,
+	       SNRtarget):
     '''
     Convert the input spectrum from cgs units (erg/s/cm^2/cm) to a the number 
     of photons with a fixed SNR at the center of the J band (1.25 microns).
@@ -452,7 +453,7 @@ def get_snr(mag, band_str, texp_min, aperture_m, QE, R):
 
 
 def exposure_time_calculator_per_band(mags, band_strs, aperture_m, QE, R,
-                                      texpmin=10, texpmax=60):
+                                      SNRtarget, texpmin=10, texpmax=60):
     '''
     Compute the exposure time required to reach a target SNR per resolution 
     element in a particular band. Either V for visible spectrographs or J for 
@@ -642,9 +643,3 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m, QE, R):
                                      aperture_m, QE, R)
     return sigmaRV_scaled
 
-
-## TEMP
-def test_sigmaRV_compare2Etienne_table5(Teff, logg, Z, band_str, R, vsini=0):
-    wl, spec = get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R)
-    #plt.plot(wl, spec, '-'), plt.xlim((1.195,1.2)), plt.show()
-    return compute_sigmaRV(wl, spec, 10, band_str, 15, 3.6, .1, R)
