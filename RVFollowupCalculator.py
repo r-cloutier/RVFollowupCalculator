@@ -2,18 +2,18 @@
 Compute nRV for all TESS targets using the code cloned from
 https://github.com/r-cloutier/Transiting_RVcalculator.git
 '''
-import numpy as np
-from get_tess_data import get_TESS_data
+from imports import *
 from compute_sigmaRV import *
 from sigmaRV_activity import *
 from sigmaRV_planets import *
-import pylab as plt
-import glob, rvs, sys, os
-from uncertainties import unumpy as unp
-
 
 global G, rhoEarth, c, h
 G, rhoEarth, c, h = 6.67e-11, 5.51, 299792458., 6.62607004e-34
+
+
+################################################################################
+################################################################################
+def nRV_calculator(band_stars, R, aperture, throughput)
 
 
 def estimate_Nrv_TESS(planetindex, band_strs, R, aperture_m,
