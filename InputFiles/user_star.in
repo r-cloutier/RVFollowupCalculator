@@ -5,12 +5,10 @@
 ## Stellar magnitudes as comma-separated values. Must have the same number 
 ## of entires as spectral band labels in user_spectrograph.in
 9.25
-## Stellar mass and 1 sigma uncertainty as comma-separated values 
-## (in Solar masses)
-0.181,0.019
-## Stellar radius and 1 sigma uncertainty as comma-separated values 
-## (in Solar radii)
-0.207,0.016
+## Stellar mass (in Solar masses)
+0.181
+## Stellar radius (in Solar radii)
+0.207
 ## Effective temperature (in Kelvin)
 3270
 ## Metallicity (Fe/H)

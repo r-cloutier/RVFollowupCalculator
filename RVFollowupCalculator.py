@@ -35,25 +35,24 @@ def nRV_calculator(Kdetsig, input_planet_fname='user_planet.in',
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
     band_strs, R, aperture, throughput, RVnoisefloor, sigRV_act, \
-        sigRV_planets = _read_spectrograph_input(input_spectrograph_fname)
-
+        sigRV_planets, sigRV_eff = \
+                            _read_spectrograph_input(input_spectrograph_fname)
     assert mags.size == band_strs.size
 
-    # get RV noise sources
-    logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
-    sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
-                                           vsini, R, aperture, throughput,
-                                           RVnoisefloor, SNRtarget, texpmin,
-                                           texpmax)
-    sys.exit('adas')
-    sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
-    sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
-                    else float(sigRV_planets)
-    sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planets**2)
+    # get RV noise sources if effective RV rms is not specified
+    if sigRV_eff != 0:
+        logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
+        sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
+                                               vsini, R, aperture, throughput,
+                                               RVnoisefloor, SNRtarget, texpmin,
+                                               texpmax)
+        sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
+        sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
+                        else float(sigRV_planets)
+        sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planets**2)
 
     # get target K measurement uncertainty
-    mp = _get_planet_mass(float(unp.nominal_values(rp))) if mp == 0 \
-         else float(mp)
+    mp = float(_get_planet_mass(rp)) if mp == 0 else float(mp)
     sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
     # compute observing requirements
@@ -70,8 +69,7 @@ def _read_planet_input(input_planet_fname):
     f = open('InputFiles/%s'%input_planet_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[5]), unp.uarray(g[8].split(',')[0], g[8].split(',')[1]), \
-        float(g[11])
+    return float(g[5]), float(g[7]), float(g[10])
 
 
 def _read_star_input(input_star_fname):
@@ -82,9 +80,7 @@ def _read_star_input(input_star_fname):
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(g[6].split(',')).astype(float), \
-        unp.uarray(g[9].split(',')[0], g[9].split(',')[1]), \
-        unp.uarray(g[12].split(',')[0], g[12].split(',')[1]), \
-        float(g[14]), float(g[16]), float(g[18])
+        float(g[8]), float(g[10]), float(g[12]), float(g[14]), float(g[16])
 
 
 def _read_spectrograph_input(input_spectrograph_fname):
@@ -95,7 +91,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(list(g[5])[:-1]), float(g[7]), float(g[9]), \
-        float(g[11]), float(g[13]), float(g[16]), float(g[19])
+        float(g[11]), float(g[13]), float(g[16]), float(g[19]), float(g[23])
 
 
 def _compute_logg(Ms, Rs):
@@ -169,8 +165,8 @@ def _get_sigK(Kdetsig, P, Ms, mp):
     '''
     Compute the desired semi-ampliutde detection measurement uncertainty.
     '''
-    K = float(unp.nominal_values(rvs.RV_K(P, Ms, mp)))
-    return K / Kdetsig
+    K = rvs.RV_K(P, Ms, mp)
+    return K / float(Kdetsig)
 
 
 ################################################################################
