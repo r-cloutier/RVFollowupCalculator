@@ -1,15 +1,4 @@
-'''
-Compute the information content in various spectral bands to estimate the 
-RV uncertainty in each band using model spectra and the conversion factors 
-from Artigau+2017.
-'''
-import numpy as np
-import pylab as plt
-import astropy.io.fits as fits
-from scipy.ndimage.filters import gaussian_filter1d
-from scipy.interpolate import interp1d, UnivariateSpline
-from PyAstronomy.pyasl import broadGaussFast, rotBroad
-from scipy.misc import derivative
+from imports import *
 
 
 global c, h, bands, centralwlSNR
@@ -50,12 +39,10 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, SNRtarget):
 
     '''
     wl = get_wavelengthgrid()
-    _, spectrum = get_full_spectrum(float(Teff), float(logg), float(Z))
-    wl_conv, spec_conv = _convolve_band_spectrum(wl, spectrum, band_str, R,
-                                                 pltt=pltt)
+    _, spectrum = get_full_spectrum(float(Teff), float(logg), float(Z))    
+    wl_conv, spec_conv = _convolve_band_spectrum(wl, spectrum, band_str, R)
     if vsini > 0:
-        spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini,
-                                            band_str, pltt=pltt)
+        spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini, band_str)
     wl_resamp, spec_resamp = _resample_spectrum(wl_conv, spec_conv, R)
     spec_scaled = _cgs2Nphot(wl, spectrum, wl_resamp, spec_resamp, SNRtarget)
     return wl_resamp, spec_scaled
@@ -72,8 +59,10 @@ def get_wavelengthgrid():
         coverage)
 
     '''
-    dat = fits.open('input_data/WAVE_PHOENIX-ACES-AGSS-COND-2011.fits')[0]
-    return np.ascontiguousarray(dat.data) * 1e-4
+    fname = "ftp://phoenix.astro.physik.uni-goettingen.de/HiResFITS/" + \
+            "WAVE_PHOENIX-ACES-AGSS-COND-2011.fits"
+    wl_fits = fits.open(fname)[0]
+    return np.ascontiguousarray(wl_fits.data) * 1e-4  # in microns
 
 
 def get_full_spectrum(Teff, logg, Z):
@@ -116,7 +105,7 @@ def get_full_spectrum(Teff, logg, Z):
     return spec_fits.header, spec_fits.data
 
 
-def _convolve_band_spectrum(wl_microns, spectrum, band_str, R, pltt=False):
+def _convolve_band_spectrum(wl_microns, spectrum, band_str, R):
     '''
     Convolve the spectrum in a given band with a Gaussian profile whose FWHM 
     is specified by the spectral resolution of the instrument.
@@ -132,9 +121,6 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R, pltt=False):
         in ['U','B','V','R','I','Y','J','H','K']
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
-    `pltt': boolean
-        If True, the convolved and original spectra are plotted using 
-        pylab.show()
 
     Returns
     -------
@@ -160,24 +146,17 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R, pltt=False):
     # Convolve to instrument resolution
     FWHM_microns = wl_central_microns / float(R)
     sigma_microns = FWHM_microns / (2*np.sqrt(2*np.log(2)))
-    print '\nConvolving the %s stellar spectrum to the '%band_str + \
-        'instrumental resolution...'
+    print 'Convolving the %s band stellar spectrum to the '%band_str + \
+        'instrumental resolution (R=%i)'%R
     try:
         spectrum_conv = broadGaussFast(wl_band, spectrum_band, sigma_microns)
     except NameError: # no convolution is bad
         spectrum_conv = spectrum_band
         
-    if pltt:
-        plt.plot(wl_band, spectrum_band, 'k-', label='Full')
-        plt.plot(wl_band, spectrum_conv, 'b-', label='Convolved')
-        plt.xlabel('Wavelength [microns]'), plt.ylabel('Flux [erg/s/cm2/cm]')
-        plt.legend(), plt.show()
-
     return wl_band, spectrum_conv
 
 
-def _rotational_convolution(wl_band, spec_band, vsini, band_str, epsilon=0.6,
-                            pltt=False):
+def _rotational_convolution(wl_band, spec_band, vsini, band_str, epsilon=0.6):
     '''
     Convolve the spectrum with rotational kernel based on the star's projected 
     rotation velocity and assuming a constant linear limb-darkening across the 
@@ -194,9 +173,6 @@ def _rotational_convolution(wl_band, spec_band, vsini, band_str, epsilon=0.6,
         in ['U','B','V','R','I','Y','J','H','K']
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
-    `pltt': boolean
-        If True, the convolved and original spectra are plotted using 
-        pylab.show()
 
     Returns
     -------
@@ -205,18 +181,10 @@ def _rotational_convolution(wl_band, spec_band, vsini, band_str, epsilon=0.6,
 
 
     '''
-    print '\nConvolving the %s stellar spectrum with a '%band_str + \
-	   'rotational profile...'
     try:
         spec_conv = rotBroad(wl_band, spec_band, epsilon, vsini)
     except NameError:   # no convolution is bad
         spec_conv = spec_band
-        
-    if pltt:
-        plt.plot(wl_band, spec_band, 'k-', label='Original')
-        plt.plot(wl_band, spec_conv, 'b-', label='Rotationally convolved')
-        plt.xlabel('Wavelength [microns]'), plt.ylabel('Flux [erg/s/cm2/cm]')
-        plt.legend(), plt.show()
 
     return spec_conv
 
@@ -336,7 +304,8 @@ def _cgs2Nphot(wl_full_microns, spec_full_cgs, wl_band_microns, spec_band_cgs,
     return spec_Nphot_scaled
                     
 
-def rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture_m, QE, R):
+def rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture_m, throughput, R,
+                    SNRtarget):
     '''
     Rescale sigmaRV from SNR=100 per resolution element to whatever SNR is 
     achieved in the input band over a given integration time.
@@ -354,22 +323,24 @@ def rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture_m, QE, R):
         The integration time in minutes
     `aperture_m': float
         The telescope's aperture diameter in meters
-    `QE': scalar
-        The quantum efficiency of the detector (0<QE<=1)
+    `throughput': scalar
+        The quantum efficiency of the detector (0<throughput<=1)
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
-
+    `SNRtarget': scalar
+        Target S/N per resolution element to be obtained during an exposure
+    
     Returns
     -------
     `SNR': float
         The rescaled SNR of the spectrum
 
     '''
-    snr = get_snr(mag, band_str, texp_min, aperture_m, QE, R)
+    snr = get_snr(mag, band_str, texp_min, aperture_m, throughput, R)
     return sigmaRV * SNRtarget / snr
     
 
-def get_snr(mag, band_str, texp_min, aperture_m, QE, R):
+def get_snr(mag, band_str, texp_min, aperture_m, throughput, R):
     '''
     Compute the SNR of the spectrum in a certain band (e.g. 'J').
 
@@ -384,8 +355,8 @@ def get_snr(mag, band_str, texp_min, aperture_m, QE, R):
         The integration time in minutes
     `aperture_m': float
         The telescope's aperture diameter in meters
-    `QE': scalar
-        The quantum efficiency of the detector (0<QE<=1)
+    `throughput': scalar
+        The quantum efficiency of the detector (0<throughput<=1)
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
 
@@ -439,7 +410,7 @@ def get_snr(mag, band_str, texp_min, aperture_m, QE, R):
 
     fl = Fl * 10**(-.4 * mag)
     Ephot = h_ergss * c_As / l
-    Nphot_A = fl * texp_s * area_cm2 * QE / Ephot
+    Nphot_A = fl * texp_s * area_cm2 * throughput / Ephot
     
     # Get # photons per resolution element (dl/l)
     Nphot_res = Nphot_A * (l / R)
@@ -452,7 +423,7 @@ def get_snr(mag, band_str, texp_min, aperture_m, QE, R):
     return SNR
 
 
-def exposure_time_calculator_per_band(mags, band_strs, aperture_m, QE, R,
+def exposure_time_calculator_per_band(mags, band_strs, aperture_m, throughput, R,
                                       SNRtarget, texpmin=10, texpmax=60):
     '''
     Compute the exposure time required to reach a target SNR per resolution 
@@ -471,8 +442,8 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture_m, QE, R,
         and at least one of ['V','J'] as a reference band
     `aperture_m': float
         The telescope's aperture diameter in meters
-    `QE': scalar
-        The quantum efficiency of the detector (0<QE<=1)
+    `throughput': scalar
+        The quantum efficiency of the detector (0<throughput<=1)
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
     `texpmin': scalar
@@ -503,7 +474,7 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture_m, QE, R,
     SNRs = np.zeros(texps.size)
     for i in range(texps.size):
         SNRs[i] = get_snr(reference_mag, reference_band, texps[i],
-                          aperture_m, QE, R)
+                          aperture_m, throughput, R)
 
     if SNRs.min() > SNRtarget:
         return float(texpmin)
@@ -514,7 +485,7 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture_m, QE, R,
         return float(fint(SNRtarget))
 
 
-def _remove_tellurics_from_W(wl_band, W, transmission_threshold=.02):
+def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold=.02):
     '''
     Remove wavelengths that are sampled at wavelengths affected by tellurics 
     at the level more than a specified threshold.
@@ -538,9 +509,9 @@ def _remove_tellurics_from_W(wl_band, W, transmission_threshold=.02):
 
     '''
     assert wl_band.size == W.size
-    print '\nRestricting the spectral domain to where the atmospheric ' + \
-        'transmission is > %.2f percent...'%(1.-transmission_threshold)
-    wlTAPAS, transTAPAS = np.loadtxt('input_data/tapas_000001.ipac', \
+    print 'Masking %s band telluric regions where '%band_str + \
+        'transmission > %.2f percent'%(1. - transmission_threshold)
+    wlTAPAS, transTAPAS = np.loadtxt('InputData/tapas_000001.ipac', \
                                      skiprows=23).T
     wlTAPAS *= 1e-3
 
@@ -601,7 +572,8 @@ def compute_W(wl_band, spec_band):
     return fint(wl_band)
 
 
-def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m, QE, R):
+def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m,
+                    throughput, R, SNRtarget):
     '''
     Compute the photon-noise limit of the RV precision from the information 
     content in the spectrum, over a particular band, and the characteristics 
@@ -622,8 +594,8 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m, QE, R):
         The integration time in minutes
     `aperture_m': float
         The telescope's aperture diameter in meters
-    `QE': scalar
-        The quantum efficiency of the detector (0<QE<=1)
+    `throughput': scalar
+        The quantum efficiency of the detector (0<throughput<=1)
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
 
@@ -636,10 +608,10 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m, QE, R):
     '''
     W = compute_W(wl_band, spec_band)
     # remove tellurics
-    W_clean = _remove_tellurics_from_W(wl_band, W)
+    W_clean = _remove_tellurics_from_W(band_str, wl_band, W)
     g = np.arange(W_clean.size) #np.arange(4, W_clean.size-4, dtype=int)
     sigmaRV = c / np.sqrt(np.sum(W_clean[g]))
     sigmaRV_scaled = rescale_sigmaRV(sigmaRV, mag, band_str, texp,
-                                     aperture_m, QE, R)
+                                     aperture_m, throughput, R, SNRtarget)
     return sigmaRV_scaled
 

@@ -14,7 +14,7 @@ G, rhoEarth, c, h = 6.67e-11, 5.51, 299792458., 6.62607004e-34
 def nRV_calculator(Kdetsig, input_planet_fname='user_planet.in',
                    input_star_fname='user_star.in',
                    input_spectrograph_fname='user_spectrograph.in',
-                   texpmin=10, texpmax=60, toverhead=5):
+                   SNRtarget=3e2, texpmin=10, texpmax=60, toverhead=5):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -36,15 +36,16 @@ def nRV_calculator(Kdetsig, input_planet_fname='user_planet.in',
     mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
     band_strs, R, aperture, throughput, RVnoisefloor, sigRV_act, \
         sigRV_planets = _read_spectrograph_input(input_spectrograph_fname)
-        
+
     assert mags.size == band_strs.size
 
     # get RV noise sources
     logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
     sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
-                                           R, aperture, throughput,
+                                           vsini, R, aperture, throughput,
                                            RVnoisefloor, SNRtarget, texpmin,
                                            texpmax)
+    sys.exit('adas')
     sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
     sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
                     else float(sigRV_planets)
@@ -105,7 +106,7 @@ def _compute_logg(Ms, Rs):
     return unp.log10(G * Ms / Rs**2 * 1e2)
 
 
-def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, R, aperture,
+def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
                         throughput, RVnoisefloor, SNRtarget, texpmin, texpmax):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
@@ -127,11 +128,13 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, R, aperture,
     # compute sigmaRV in each band for a fixed texp
     sigmaRVs = np.zeros(mags.size)
     for i in range(sigmaRVs.size):
+        t0 = time.time()
         wl, spec = get_reduced_spectrum(Teff_round, logg_round, Z_round, vsini,
-                                        band_strs[i], R)
+                                        band_strs[i], R, SNRtarget)
         sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
-                                      aperture, throughput, R)
-
+                                      aperture, throughput, R, SNRtarget)
+        print 'Took %.1f seconds\n'%(time.time()-t0)
+        
     # compute sigmaRV over all bands
     sigRV_phot = 1 / np.sqrt(np.sum(1. / sigmaRVs**2))
     sigRV_phot = sigRV_phot if sigRV_phot > RVnoisefloor \
@@ -210,8 +213,9 @@ def estimate_Nrv_TESS(planetindex, band_strs, R, aperture_m,
         To be added in quadrature to the photon-noise RV precision derived for 
         the TESS star
     `testingseed': boolean
-        If True, use a seed for the random number generator used to draw the stellar 
-        rotation period, RV activity, and RV from planets. Useful for testing
+        If True, use a seed for the random number generator used to draw the 
+        stellar rotation period, RV activity, and RV from planets. Useful for 
+        testing
     `testplanet_sigmaKfrac': scalar
         If 0, assume we are calculating a TESS planet and use its mass to 
         determine the required constraint on the K measurement uncertainty 
