@@ -4,7 +4,7 @@
 ## this file.
 ## Stellar magnitudes as comma-separated values. Must have the same number 
 ## of entires as spectral band labels in user_spectrograph.in
-9.75,9.25,8.67
+9.25
 ## Stellar mass and 1 sigma uncertainty as comma-separated values 
 ## (in Solar masses)
 0.181,0.019
