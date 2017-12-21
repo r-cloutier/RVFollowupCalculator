@@ -1,8 +1,8 @@
 from imports import *
 
 
-global c, h, bands, centralwlSNR
-c, h, centralwlSNR = 299792458., 6.62607004e-34, 1.25
+global c, h, bands
+c, h = 299792458., 6.62607004e-34
 bands = ['U','B','V','R','I','Y','J','H','K']
 
 
@@ -29,8 +29,8 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R,
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
     `centralwl': scalar
-        The reference wavelength where the instrument resolultion and SNR are 
-        specified in angstroms
+        The reference wavelength where the instrument resolution and SNR are 
+        specified in microns
     `SNRtarget': scalar
         Target SNR per resolution element to be obtained during an exposure
 
@@ -46,8 +46,9 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R,
     _, spectrum = _get_full_spectrum(float(Teff), float(logg), float(Z))    
     wl_conv, spec_conv = _convolve_band_spectrum(wl, spectrum, band_str, R)
     if vsini > 0:
-        spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini, band_str)
-    wl_resamp, spec_resamp = _resample_spectrum(wl_conv, spec_conv, R)
+        spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini)
+    wl_resamp, spec_resamp = _resample_spectrum(wl_conv, spec_conv, R,
+                                                centralwl)
     spec_scaled = _cgs2Nphot(wl, spectrum, wl_resamp, spec_resamp, SNRtarget)
     return wl_resamp, spec_scaled
 
@@ -142,7 +143,7 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R):
     # Isolate wavelength range
     if band_str not in bands:
         raise ValueError('Unknown passband: %s'%band_str)
-    wlmin, wlmax, wl_central_microns = get_band_range(band_str)
+    wlmin, wlmax, wl_central_microns = _get_band_range(band_str)
     in_band = (wl_microns2 >= wlmin) & (wl_microns2 <= wlmax)
     wl_band, spectrum_band = wl_microns2[in_band], spectrum2[in_band]
 
@@ -190,7 +191,7 @@ def _rotational_convolution(wl_band, spec_band, vsini, epsilon=0.6):
     return spec_conv
 
 
-def _resample_spectrum(wl, spec, R, pixels_per_element=3):
+def _resample_spectrum(wl, spec, R, centralwl):
     '''
     Resample the input wavelength array and spectrum to the width of the 
     resolution element.
@@ -203,17 +204,25 @@ def _resample_spectrum(wl, spec, R, pixels_per_element=3):
         Stellar spectrum array in erg/s/cm^2/cm
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
-    `pixels_per_element': scalar
-        The number of detector pixel in a single resolution element
+    `centralwl': scalar
+        The reference wavelength where the instrument resolution and SNR are 
+        specified in microns
+
+    Returns
+    -------
+    `wl': numpy.array 
+        Resampled spectral array of wavelengths in microns
+    `spec': numpy.array 
+        Resampled stellar spectrum array in erg/s/cm^2/cm
 
     '''
-    dl = centralwlSNR / R
+    dl = centralwl / R
     wl_resamp = np.arange(wl.min(), wl.max(), dl)
     fint = interp1d(wl, spec)
     return wl_resamp, fint(wl_resamp)
 
 
-def get_band_range(band_str):
+def _get_band_range(band_str):
     '''
     Define the wavelength range for a given band and its central wavelength.
 
@@ -294,18 +303,18 @@ def _cgs2Nphot(wl_full_microns, spec_full_cgs, wl_band_microns, spec_band_cgs,
                                        h*c / (wl_band_cm*1e-2) * 1e7
     spec_full_Nphot, spec_band_Nphot = spec_full_cgs / energy_full_erg, \
                                        spec_band_cgs / energy_band_erg
-    centralwlSNR = 1.25
-    centralJindex = np.where(abs(wl_full_microns-centralwlSNR) == \
-                             np.min(abs(wl_full_microns-centralwlSNR)))[0][0]
+    centralindex = np.where(abs(wl_full_microns-centralwl) == \
+                            np.min(abs(wl_full_microns-centralwl)))[0][0]
     # SNR = sqrt(Nphot)
     norm = SNRtarget**2 / \
-           np.max(spec_full_Nphot[centralJindex-3:centralJindex+3])
+           np.max(spec_full_Nphot[centralindex-3:centralindex+3])
     spec_Nphot_scaled = norm * spec_band_Nphot
+    
     return spec_Nphot_scaled
                     
 
-def rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture_m, throughput, R,
-                    SNRtarget):
+def _rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture, throughput, R,
+                     SNRtarget):
     '''
     Rescale sigmaRV from SNR=100 per resolution element to whatever SNR is 
     achieved in the input band over a given integration time.
@@ -321,7 +330,7 @@ def rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture_m, throughput, R,
         in ['U','B','V','R','I','Y','J','H','K']
     `texp_min': scalar
         The integration time in minutes
-    `aperture_m': float
+    `aperture': float
         The telescope's aperture diameter in meters
     `throughput': scalar
         The quantum efficiency of the detector (0<throughput<=1)
@@ -336,11 +345,11 @@ def rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture_m, throughput, R,
         The rescaled SNR of the spectrum
 
     '''
-    snr = get_snr(mag, band_str, texp_min, aperture_m, throughput, R)
+    snr = _get_snr(mag, band_str, texp_min, aperture, throughput, R)
     return sigmaRV * SNRtarget / snr
     
 
-def get_snr(mag, band_str, texp_min, aperture_m, throughput, R):
+def _get_snr(mag, band_str, texp_min, aperture, throughput, R):
     '''
     Compute the SNR of the spectrum in a certain band (e.g. 'J').
 
@@ -353,7 +362,7 @@ def get_snr(mag, band_str, texp_min, aperture_m, throughput, R):
         in ['U','B','V','R','I','Y','J','H','K']
     `texp_min': scalar
         The integration time in minutes
-    `aperture_m': float
+    `aperture': float
         The telescope's aperture diameter in meters
     `throughput': scalar
         The quantum efficiency of the detector (0<throughput<=1)
@@ -367,7 +376,7 @@ def get_snr(mag, band_str, texp_min, aperture_m, throughput, R):
 
     '''
     # Define constants
-    area_cm2 = np.pi * (aperture_m*1e2/2)**2
+    area_cm2 = np.pi * (aperture*1e2/2)**2
     res_kms = c/R
     texp_s = texp_min * 60.
     c_As = c * 1e10
@@ -423,7 +432,7 @@ def get_snr(mag, band_str, texp_min, aperture_m, throughput, R):
     return SNR
 
 
-def exposure_time_calculator_per_band(mags, band_strs, aperture_m, throughput, R,
+def exposure_time_calculator_per_band(mags, band_strs, aperture, throughput, R,
                                       SNRtarget, texpmin=10, texpmax=60):
     '''
     Compute the exposure time required to reach a target SNR per resolution 
@@ -440,7 +449,7 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture_m, throughput, R
         All band_strs entries must be in 
         ['U','B','V','R','I','Y','J','H','K']
         and at least one of ['V','J'] as a reference band
-    `aperture_m': float
+    `aperture': float
         The telescope's aperture diameter in meters
     `throughput': scalar
         The quantum efficiency of the detector (0<throughput<=1)
@@ -473,8 +482,8 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture_m, throughput, R
     texps = np.arange(texpmin, texpmax+.1, .1)  # minutes
     SNRs = np.zeros(texps.size)
     for i in range(texps.size):
-        SNRs[i] = get_snr(reference_mag, reference_band, texps[i],
-                          aperture_m, throughput, R)
+        SNRs[i] = _get_snr(reference_mag, reference_band, texps[i],
+                           aperture, throughput, R)
 
     if SNRs.min() > SNRtarget:
         return float(texpmin)
@@ -572,7 +581,7 @@ def compute_W(wl_band, spec_band):
     return fint(wl_band)
 
 
-def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m,
+def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture,
                     throughput, R, SNRtarget):
     '''
     Compute the photon-noise limit of the RV precision from the information 
@@ -592,7 +601,7 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m,
         in ['U','B','V','R','I','Y','J','H','K']
     `texp': scalar
         The integration time in minutes
-    `aperture_m': float
+    `aperture': float
         The telescope's aperture diameter in meters
     `throughput': scalar
         The quantum efficiency of the detector (0<throughput<=1)
@@ -607,11 +616,13 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture_m,
  
     '''
     W = compute_W(wl_band, spec_band)
+    
     # remove tellurics
     W_clean = _remove_tellurics_from_W(band_str, wl_band, W)
     g = np.arange(W_clean.size) #np.arange(4, W_clean.size-4, dtype=int)
     sigmaRV = c / np.sqrt(np.sum(W_clean[g]))
-    sigmaRV_scaled = rescale_sigmaRV(sigmaRV, mag, band_str, texp,
-                                     aperture_m, throughput, R, SNRtarget)
+
+    sigmaRV_scaled = _rescale_sigmaRV(sigmaRV, mag, band_str, texp,
+                                      aperture, throughput, R, SNRtarget)
     return sigmaRV_scaled
 

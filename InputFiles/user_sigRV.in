@@ -7,4 +7,4 @@
 # RV rms from additional planets (in m/s). Set to a negative value to sample its value rather than specifying it
 0
 # Effective RV rms (in m/s). Set to a non-zero value to be used verbatim rather than being calculated from the photon-noise limited RV rms, activity, and additional planet contributions
-3.38
+0

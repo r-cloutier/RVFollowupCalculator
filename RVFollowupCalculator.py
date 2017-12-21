@@ -47,8 +47,8 @@ def nRV_calculator(Kdetsig,
         logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
         sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
                                                vsini, R, aperture, throughput,
-                                               RVnoisefloor, SNRtarget, texpmin,
-                                               texpmax)
+                                               RVnoisefloor, centralwl,
+                                               SNRtarget, texpmin, texpmax)
         sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
         sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
                         else float(sigRV_planets)
@@ -121,7 +121,8 @@ def _compute_logg(Ms, Rs):
 
 
 def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
-                        throughput, RVnoisefloor, SNRtarget, texpmin, texpmax):
+                        throughput, RVnoisefloor, centralwl, SNRtarget,
+                        texpmin, texpmax):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
     full spectral domain.
@@ -144,7 +145,8 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
     for i in range(sigmaRVs.size):
         t0 = time.time()
         wl, spec = get_reduced_spectrum(Teff_round, logg_round, Z_round, vsini,
-                                        band_strs[i], R, SNRtarget)
+                                        band_strs[i], R, centralwl*1e-3,
+                                        SNRtarget)
         sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
                                       aperture, throughput, R, SNRtarget)
         print 'Took %.1f seconds\n'%(time.time()-t0)
