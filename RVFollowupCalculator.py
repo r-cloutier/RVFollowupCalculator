@@ -11,11 +11,143 @@ global G, rhoEarth, c, h
 G, rhoEarth, c, h = 6.67e-11, 5.51, 299792458., 6.62607004e-34
 
 
-################################################################################
-################################################################################
-def nRV_calculator(band_stars, R, aperture, throughput)
+def nRV_calculator(Kdetsig, input_planet_fname='./user_planet.in',
+                   input_star_fname='./user_star.in',
+                   input_spectrograph_fname='./user_spectrograph.in',
+                   texpmin=10, texpmax=60, toverhead=5):
+    '''
+    Compute the number of RV measurements required to detect an input 
+    transiting planet around an input star with an input spectrograph at a 
+    given significance.
+
+    Parameters
+    ----------
+    `Kdetsig': scalar
+        The desired RV semi-amplitude detection significance measured as 
+        the semi-amplitude over its measurement uncertainty 
+        (i.e. Kdetsig = K / sigmaK).
+
+    Returns
+    -------
+    '''
+    
+    # get inputs
+    P, rp, mp = _read_planet_input(input_planet_fname)
+    mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
+    band_strs, R, aperture, throughput, RVnoisefloor, sigRV_act, \
+        sigRV_planets = _read_spectrograph_input(input_spectrograph_fname)
+        
+    assert mags.size == band_strs.size
+
+    # get round values for PHOENIX stellar models
+    Teffs = np.append(np.arange(23e2,7e3,1e2), np.arange(7e3,121e2,2e2))
+    Teff_round = Teffs[abs(Teffs-Teff) == np.min(abs(Teffs-Teff))][0]
+    loggs = np.arange(0, 6.1, .5)
+    logg = float(unp.nominal_values(_compute_logg_round(Ms, Rs)))
+    logg_round = loggs[abs(loggs-logg) == np.min(abs(loggs-logg))][0]
+    Zs = np.append(np.arange(-4,-1,dtype=float), np.arange(-1.5,1.5,.5))
+    Z_round = Zs[abs(Zs-Z) == np.min(abs(Zs-Z))][0]
+    
+    sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff_round,
+                                           logg_round, Z_round, R, aperture,
+                                           throughput, RVnoisefloor, texpmin,
+                                           texpmax)
+
+    sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
+
+    sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
+                    else float(sigRV_planets)
+
+    sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planets**2)
+
+    mp = _get_planet_mass(float(unp.nominal_values(rp))) if mp == 0 \
+         else float(mp)
+    sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
+    
+    Nrv = 2. * (sigRV_eff / sigK_target)**2
+
+    tobs = Nrv * (texp + toverhead) / 60  # in hours
+    
+    return Nrv, tobs
+
+    
+def _read_planet_input(input_planet_fname):
+    '''
+    Read-in planetary data from the input file.
+    '''
+    f = open(input_planet_fname, 'r')
+    g = f.readlines()
+    f.close()
+    return float(g[5]), unp.uarray(g[8].split(',')[0], g[8].split(',')[1])
 
 
+def _read_star_input(input_star_fname):
+    '''
+    Read-in stellar data from the input file.
+    '''
+    f = open(input_star_fname, 'r')
+    g = f.readlines()
+    f.close()
+    return np.ascontiguousarray(g[6].split(',')).astype(float), \
+        unp.uarray(g[9].split(',')[0], g[9].split(',')[1]), \
+        unp.uarray(g[12].split(',')[0], g[12].split(',')[1]), \
+        float(g[14]), float(g[16]), float(g[18])
+
+
+def _read_spectrograph_input(input_spectrograph_fname):
+    '''
+    Read-in spectrograph data from the input file.
+    '''
+    f = open(input_spectrograph_fname, 'r')
+    g = f.readlines()
+    f.close()
+    return np.ascontiguousarray(list(g[5])[:-1]), float(g[7]), float(g[9]), \
+        float(g[11]), float(g[13]), float(g[16]), float(g[19])
+
+
+def _compute_logg(Ms, Rs):
+    '''
+    Compute stellar logg in cgs units.
+    '''
+    Ms, Rs = rvs.Msun2kg(Ms), rvs.Rsun2m(Rs)
+    return np.log10(G * Ms / Rs**2 * 1e2)
+
+
+def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, R, aperture,
+                        throughput, RVnoisefloor, texpmin, texpmax):
+    '''
+    Calculate the photon-noise limited RV precision over the spectrograph's 
+    full spectral domain.
+    '''
+    # get exposure time
+    texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
+                                             throughput, R, SNRtarget,
+                                             texpmin=texpmin, texpmax=texpmax)
+
+    # compute sigmaRV in each band for a fixed texp
+    sigmaRVs = np.zeros(mags.size)
+    for i in range(sigmaRVs.size):
+        wl, spec = get_reduced_spectrum(Teff, logg, Z, vsini, band_strs[i], R)
+        sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
+                                      aperture, throughput, R)
+
+    # compute sigmaRV over all bands
+    sigRV_phot = 1 / np.sqrt(np.sum(1. / sigmaRVs**2))
+    sigRV_phot = sigRV_phot if sigRV_phot > RVnoisefloor \
+                 else float(RV_noisefloor)
+    return sigRV_phot, texp
+
+
+def _get_sigK(Kdetsig, P, Ms, mp):
+    '''
+    Compute the desired semi-ampliutde detection measurement uncertainty.
+    '''
+    K = float(unp.nominal_values(rvs.RV_K(P, Ms, mp)))
+    return K / Kdetsig
+
+
+################################################################################
+################################################################################
 def estimate_Nrv_TESS(planetindex, band_strs, R, aperture_m,
                       QE=.1, Z=0, sigmaRV_activity=0, sigmaRV_planets=0,
                       sigmaRV_noisefloor=.5, testingseed=False,
