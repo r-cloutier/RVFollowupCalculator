@@ -1,4 +1,4 @@
-## user_star.in
+## user_planet.in
 ## The formatting contained in this input file is important and must be
 ## unchanged to ensure the proper reading of the parameters contained within
 ## this file.
@@ -6,6 +6,5 @@
 1.629
 ## Planetary radius (in Earth radii)
 1.16
-## Planetary mass (in Earth masses). Set to zero to estimate the planetary 
-## mass from the radius and mass-radius relationship
+## Planetary mass (in Earth masses). Set to zero to estimate the planetary mass from the radius and mass-radius relationship
 0

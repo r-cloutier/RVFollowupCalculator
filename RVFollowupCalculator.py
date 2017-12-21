@@ -11,10 +11,11 @@ global G, rhoEarth, c, h
 G, rhoEarth, c, h = 6.67e-11, 5.51, 299792458., 6.62607004e-34
 
 
-def nRV_calculator(Kdetsig, input_planet_fname='user_planet.in',
+def nRV_calculator(Kdetsig,
+                   input_planet_fname='user_planet.in',
                    input_star_fname='user_star.in',
                    input_spectrograph_fname='user_spectrograph.in',
-                   SNRtarget=3e2, texpmin=10, texpmax=60, toverhead=5):
+                   input_sigRV_fname='user_sigRV.in'):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -34,11 +35,12 @@ def nRV_calculator(Kdetsig, input_planet_fname='user_planet.in',
     # get inputs
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
-    band_strs, R, aperture, throughput, RVnoisefloor, sigRV_act, \
-        sigRV_planets, sigRV_eff = \
-                            _read_spectrograph_input(input_spectrograph_fname)
+    band_strs, R, aperture, throughput, RVnoisefloor, SNRtarget, texpmin, \
+        texpmax, toverhead = _read_spectrograph_input(input_spectrograph_fname)
+    assert texpmin < texpmax
     assert mags.size == band_strs.size
-
+    sigRV_act, sigRV_planets, sigRV_eff = _read_sigRV_input(input_sigRV_fname)
+    
     # get RV noise sources if effective RV rms is not specified
     if sigRV_eff != 0:
         logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
@@ -69,7 +71,7 @@ def _read_planet_input(input_planet_fname):
     f = open('InputFiles/%s'%input_planet_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[5]), float(g[7]), float(g[10])
+    return float(g[5]), float(g[7]), float(g[9])
 
 
 def _read_star_input(input_star_fname):
@@ -79,8 +81,8 @@ def _read_star_input(input_star_fname):
     f = open('InputFiles/%s'%input_star_fname, 'r')
     g = f.readlines()
     f.close()
-    return np.ascontiguousarray(g[6].split(',')).astype(float), \
-        float(g[8]), float(g[10]), float(g[12]), float(g[14]), float(g[16])
+    return np.ascontiguousarray(g[5].split(',')).astype(float), \
+        float(g[7]), float(g[9]), float(g[11]), float(g[13]), float(g[15])
 
 
 def _read_spectrograph_input(input_spectrograph_fname):
@@ -91,7 +93,18 @@ def _read_spectrograph_input(input_spectrograph_fname):
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(list(g[5])[:-1]), float(g[7]), float(g[9]), \
-        float(g[11]), float(g[13]), float(g[16]), float(g[19]), float(g[23])
+        float(g[11]), float(g[13]), float(g[15]), float(g[17]), float(g[19]), \
+        float(g[21])
+
+
+def _read_sigRV_input(input_sigRV_fname):
+    '''
+    Read-in RV noise source data from the input file.
+    '''
+    f = open('InputFiles/%s'%input_sigRV_fname, 'r')
+    g = f.readlines()
+    f.close()
+    return float(g[5]), float(g[7]), float(g[9])
 
 
 def _compute_logg(Ms, Rs):

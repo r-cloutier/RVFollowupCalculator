@@ -12,13 +12,11 @@ J
 1e-1
 ## RV noise floor (in m/s)
 5e-1
-## RV activity rms (in m/s). Set to a negative value to sample its value rather 
-## than specifying it
-0
-## RV rms from additional planets (in m/s). Set to a negative value to sample its 
-## value rather than specifying it
-0
-## Effective RV rms (in m/s). Set to a non-zero value to be used verbatim rather 
-## than being calculating the photon-noise limited RV rms, activity, and 
-## additional planet contributions
-3.33
+## Target signal-to-noise ratio per resolution element
+3e2
+## Minimum exposure time (in minutes)
+10
+## Maximum exposure time (in minutes)
+60
+## Overhead time (in minutes)
+5
