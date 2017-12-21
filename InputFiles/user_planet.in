@@ -7,4 +7,4 @@
 ## Planetary radius (in Earth radii)
 1.16
 ## Planetary mass (in Earth masses). Set to zero to estimate the planetary mass from the radius and mass-radius relationship
-0
+1.67

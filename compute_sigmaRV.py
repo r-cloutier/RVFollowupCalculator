@@ -6,7 +6,8 @@ c, h, centralwlSNR = 299792458., 6.62607004e-34, 1.25
 bands = ['U','B','V','R','I','Y','J','H','K']
 
 
-def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, SNRtarget):
+def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R,
+                         centralwl, SNRtarget):
     '''
     Download a PHOENIX stellar model spectrum and reduce the spectrum over 
     a particular spectral bin via convolution with the instrumental resolution 
@@ -27,19 +28,22 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, SNRtarget):
         in ['U','B','V','R','I','Y','J','H','K']
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
-    `pltt': boolean
-        If True, the fully reduced spectrum is plotted using pylab.show()
+    `centralwl': scalar
+        The reference wavelength where the instrument resolultion and SNR are 
+        specified in angstroms
+    `SNRtarget': scalar
+        Target SNR per resolution element to be obtained during an exposure
 
     Returns
     -------
-    `wl_resamp': numpy.array
+    `wl': numpy.array
         Spectral array of wavelengths in microns
-    `spec_resamp': numpy.array
+    `spec': numpy.array
         Stellar spectrum array in Nphotons/s/cm^2/cm
 
     '''
-    wl = get_wavelengthgrid()
-    _, spectrum = get_full_spectrum(float(Teff), float(logg), float(Z))    
+    wl = _get_wavelengthgrid()
+    _, spectrum = _get_full_spectrum(float(Teff), float(logg), float(Z))    
     wl_conv, spec_conv = _convolve_band_spectrum(wl, spectrum, band_str, R)
     if vsini > 0:
         spec_conv = _rotational_convolution(wl_conv, spec_conv, vsini, band_str)
@@ -48,7 +52,7 @@ def get_reduced_spectrum(Teff, logg, Z, vsini, band_str, R, SNRtarget):
     return wl_resamp, spec_scaled
 
 
-def get_wavelengthgrid():
+def _get_wavelengthgrid():
     '''
     Read-in the wavelength grid for the PHOENIX model spectra and return it.
     
@@ -65,10 +69,10 @@ def get_wavelengthgrid():
     return np.ascontiguousarray(wl_fits.data) * 1e-4  # in microns
 
 
-def get_full_spectrum(Teff, logg, Z):
+def _get_full_spectrum(Teff, logg, Z):
     '''
-    Read-in model spectrum from the PHOENIX library and return the header and 
-    the full spectral data (i.e. no cut in wavelength).
+    Read-in a model stellar spectrum from the PHOENIX library and return the 
+    header and  the full spectral data (i.e. all available wavelengths).
 
     Parameters
     ----------
@@ -87,7 +91,6 @@ def get_full_spectrum(Teff, logg, Z):
         Stellar spectrum array in erg/s/cm^2/cm
 
     '''
-    # Define stellar values
     Teffs = np.append(np.arange(23e2,7e3,1e2), np.arange(7e3,121e2,2e2)) 
     assert Teff in Teffs
     loggs = np.arange(0,6.1,.5)
@@ -124,9 +127,9 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R):
 
     Returns
     -------
-    `wl_band': numpy.array 
+    `wl': numpy.array 
         Spectral array of wavelengths in microns over the spectral band
-    `spec_band': numpy.array 
+    `spec': numpy.array 
         Stellar spectrum array in erg/s/cm^2/cm over the spectral band
 
     '''
@@ -156,7 +159,7 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R):
     return wl_band, spectrum_conv
 
 
-def _rotational_convolution(wl_band, spec_band, vsini, band_str, epsilon=0.6):
+def _rotational_convolution(wl_band, spec_band, vsini, epsilon=0.6):
     '''
     Convolve the spectrum with rotational kernel based on the star's projected 
     rotation velocity and assuming a constant linear limb-darkening across the 
@@ -168,17 +171,15 @@ def _rotational_convolution(wl_band, spec_band, vsini, band_str, epsilon=0.6):
         Spectral array of wavelengths in microns
     `spec_band': array-like
         Stellar spectrum array in erg/s/cm^2/cm
-    `band_str': str
-        The letter designating the spectral band under consideration. Must be 
-        in ['U','B','V','R','I','Y','J','H','K']
+    `vsini': scalar
+        The projected stellar rotation velocity in km/s
     `R': scalar
         The spectral resolution of the spectrograph (lambda / d_lambda)
 
     Returns
     -------
-    `spec_conv': numpy.array 
+    `spec': numpy.array 
         Stellar spectrum array in erg/s/cm^2/cm over the spectral band
-
 
     '''
     try:
@@ -206,8 +207,7 @@ def _resample_spectrum(wl, spec, R, pixels_per_element=3):
         The number of detector pixel in a single resolution element
 
     '''
-    dl = centralwlSNR / R  # Artigau+2017
-    #dl = wl.min() / (float(pixels_per_element) * R) # Figueira+2017
+    dl = centralwlSNR / R
     wl_resamp = np.arange(wl.min(), wl.max(), dl)
     fint = interp1d(wl, spec)
     return wl_resamp, fint(wl_resamp)
