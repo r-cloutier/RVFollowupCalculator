@@ -10,7 +10,7 @@ YJH
 3.6
 ## Throughput
 1e-1
-## RV noise floor
+## RV noise floor (in m/s)
 5e-1
 ## RV activity rms (in m/s). Set to a negative value to sample its value rather 
 ## than specifying it

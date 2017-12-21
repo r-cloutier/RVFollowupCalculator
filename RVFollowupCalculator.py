@@ -11,9 +11,9 @@ global G, rhoEarth, c, h
 G, rhoEarth, c, h = 6.67e-11, 5.51, 299792458., 6.62607004e-34
 
 
-def nRV_calculator(Kdetsig, input_planet_fname='./user_planet.in',
-                   input_star_fname='./user_star.in',
-                   input_spectrograph_fname='./user_spectrograph.in',
+def nRV_calculator(Kdetsig, input_planet_fname='user_planet.in',
+                   input_star_fname='user_star.in',
+                   input_spectrograph_fname='user_spectrograph.in',
                    texpmin=10, texpmax=60, toverhead=5):
     '''
     Compute the number of RV measurements required to detect an input 
@@ -66,7 +66,7 @@ def _read_planet_input(input_planet_fname):
     '''
     Read-in planetary data from the input file.
     '''
-    f = open(input_planet_fname, 'r')
+    f = open('InputFiles/%s'%input_planet_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[5]), unp.uarray(g[8].split(',')[0], g[8].split(',')[1]), \
@@ -77,7 +77,7 @@ def _read_star_input(input_star_fname):
     '''
     Read-in stellar data from the input file.
     '''
-    f = open(input_star_fname, 'r')
+    f = open('InputFiles/%s'%input_star_fname, 'r')
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(g[6].split(',')).astype(float), \
@@ -90,7 +90,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     '''
     Read-in spectrograph data from the input file.
     '''
-    f = open(input_spectrograph_fname, 'r')
+    f = open('InputFiles/%s'%input_spectrograph_fname, 'r')
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(list(g[5])[:-1]), float(g[7]), float(g[9]), \
@@ -137,6 +137,29 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, R, aperture,
     sigRV_phot = sigRV_phot if sigRV_phot > RVnoisefloor \
                  else float(RV_noisefloor)
     return sigRV_phot, texp
+
+
+def _get_planet_mass(rps, Fs=336.5):
+    '''
+    '''
+    rps, Fs = np.ascontiguousarray(rps), np.ascontiguousarray(Fs)
+    assert rps.size == Fs.size
+
+    # isolate different regimes
+    Fs = Fs*1367*1e7*1e-4   # erg/s/cm^2
+    rocky = rps < 1.5
+    small = (1.5 <= rps) & (rps < 4)
+    neptune = (4 <= rps) & (rps < 13.668)
+    giant = rps >= 13.668
+
+    # compute mean mass in each regime
+    mps = np.zeros(rps.size)
+    mps[rocky]   = .44*rps[rocky]**3 + .614*rps[rocky]**4
+    mps[small]   = 2.69 * rps[small]**(.93)
+    mps[neptune] = (rps[neptune]*Fs[neptune]**.03 / 1.78)**(1/.53)
+    mps[giant]   = np.random.uniform(150,2e3)
+
+    return mps
 
 
 def _get_sigK(Kdetsig, P, Ms, mp):
