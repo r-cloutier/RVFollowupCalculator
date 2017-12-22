@@ -16,7 +16,7 @@ def nRV_calculator(Kdetsig,
                    input_star_fname='user_star.in',
                    input_spectrograph_fname='user_spectrograph.in',
                    input_sigRV_fname='user_sigRV.in',
-                   output_fname='RVFollowupCalculator.dat'):
+                   output_fname='RVFollowupCalculator'):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -218,6 +218,6 @@ def _write_results2file(output_fname, magiclistofstuff2write):
         else:
             g += '%.4e\n'%magiclistofstuff2write[i]
             
-    f = open('Results/%s'%output_fname, 'w')
+    f = open('Results/%s.dat'%output_fname, 'w')
     f.write(g)
     f.close()
