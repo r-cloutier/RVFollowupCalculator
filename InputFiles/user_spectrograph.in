@@ -3,7 +3,7 @@
 ## unchanged to ensure the proper reading of the parameters contained within
 ## this file.
 ## Spectral band labels (chosen from the list of possible values [U,B,V,R,I,Y,J,H,K])
-J
+YJH
 ## Spectral resolution (lambda / delta lambda)
 1e5
 ## Telescope aperture (in meters)

@@ -7,9 +7,8 @@ from compute_sigmaRV import *
 from sigmaRV_activity import *
 from sigmaRV_planets import *
 
-global G, rhoEarth, c, h
-G, rhoEarth, c, h = 6.67e-11, 5.51, 299792458., 6.62607004e-34
-
+global G
+G = 6.67e-11
 
 def nRV_calculator(Kdetsig,
                    input_planet_fname='user_planet.in',
@@ -27,7 +26,19 @@ def nRV_calculator(Kdetsig,
     `Kdetsig': scalar
         The desired RV semi-amplitude detection significance measured as 
         the semi-amplitude over its measurement uncertainty 
-        (i.e. Kdetsig = K / sigmaK).
+        (i.e. Kdetsig = K / sigmaK)
+
+    Returns
+    -------
+    `nRV': float
+        The number of RV measurements required to detect the planet's RV 
+        semi-amplitude with a detection significance of `Kdetsig'
+    `texp': float
+        The exposure time in minutes required to achieve a SNR of SNRtarget 
+        (see input_spectrograph_fname) per resolution element
+    `tobs': float
+        The total observing time in hours required to detect the planet's RV 
+        semi-amplitude with a detection significance of `Kdetsig'
 
     '''    
     # get inputs
@@ -72,6 +83,8 @@ def nRV_calculator(Kdetsig,
               transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot,
               sigRV_act, sigRV_planets, sigRV_eff, sigK_target, nRV, texp, tobs]
     _write_results2file(output_fname, output)
+
+    return nRV, texp, tobs
 
 
 def _read_planet_input(input_planet_fname):
