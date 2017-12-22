@@ -217,7 +217,12 @@ def _write_results2file(output_fname, magiclistofstuff2write):
             pass
         else:
             g += '%.4e\n'%magiclistofstuff2write[i]
-            
+
+    # write .dat file
+    try:
+        os.mkdir('Results')
+    except OSError:
+        pass
     f = open('Results/%s.dat'%output_fname, 'w')
     f.write(g)
     f.close()
