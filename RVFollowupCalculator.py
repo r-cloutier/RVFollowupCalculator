@@ -15,7 +15,8 @@ def nRV_calculator(Kdetsig,
                    input_planet_fname='user_planet.in',
                    input_star_fname='user_star.in',
                    input_spectrograph_fname='user_spectrograph.in',
-                   input_sigRV_fname='user_sigRV.in'):
+                   input_sigRV_fname='user_sigRV.in',
+                   output_fname='RVFollowupCalculator.dat'):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -28,10 +29,7 @@ def nRV_calculator(Kdetsig,
         the semi-amplitude over its measurement uncertainty 
         (i.e. Kdetsig = K / sigmaK).
 
-    Returns
-    -------
-    '''
-    
+    '''    
     # get inputs
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
@@ -41,7 +39,7 @@ def nRV_calculator(Kdetsig,
     assert texpmin < texpmax
     assert mags.size == band_strs.size
     sigRV_act, sigRV_planets, sigRV_eff = _read_sigRV_input(input_sigRV_fname)
-    
+
     # get RV noise sources if effective RV rms is not specified
     if sigRV_eff <= 0:
         logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
@@ -67,8 +65,13 @@ def nRV_calculator(Kdetsig,
     # compute observing requirements
     nRV = 2. * (sigRV_eff / sigK_target)**2
     tobs = nRV * (texp + toverhead) / 60  # in hours
-
-    return nRV, tobs
+    
+    # write results to file
+    output = [P, rp, mp, mags, Ms, Rs, Teff, Z, vsini, band_strs, R, aperture,
+              throughput, RVnoisefloor, centralwl*1e3, SNRtarget,
+              transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot,
+              sigRV_act, sigRV_planets, sigRV_eff, sigK_target, nRV, texp, tobs]
+    _write_results2file(output_fname, output)
 
 
 def _read_planet_input(input_planet_fname):
@@ -190,3 +193,31 @@ def _get_sigK(Kdetsig, P, Ms, mp):
     '''
     K = rvs.RV_K(P, Ms, mp)
     return K / float(Kdetsig)
+
+
+def _write_results2file(output_fname, magiclistofstuff2write):
+    '''
+    Write the resulting parameters to a .dat file.
+    '''
+    # create header with indices
+    maglabels = ''
+    for i in range(magiclistofstuff2write[3].size):
+        maglabels += '%s magnitude\n'%magiclistofstuff2write[9][i]
+    hdr = 'Orbital period (days)\nPlanetary radius (Earth radii)\nPlanetary mass(Earth masses)\n%sStellar mass (Solar masses)\nStellar Radius (Solar radii)\nEffective temperature (K)\n[Fe/H] (Solar units)\nProjected rotation velocity (km/s)\nSpectral resolution\nAperture (meters)\nThroughput\nRV noise floor (m/s)\nReference wavelength (microns)\nTarget SNR\nMaximum fractional telluric absorption\nMinimum exposure time (minutes)\nMaximum exposure time (minutes)\nOverhead (minutes)\nPhoton noise limited RV (m/s)\nRV activity rms (m/s)\nAdditional planet RV rms (m/s)\nEffective RV rms (m/s)\nTarget K measurement uncertainty (m/s)\nNumber of RV measurements\nExposure time (minutes)\nTotal observing time (hours)'%maglabels
+    hdr, hdrv2 = hdr.split('\n'), ''
+    for i in range(len(hdr)):
+        hdrv2 += '# %i: %s\n'%(i, hdr[i])
+
+    g = hdrv2
+    for i in range(len(magiclistofstuff2write)):
+        if i == 3:
+            for j in range(magiclistofstuff2write[i].size):
+                g += '%.4e\n'%magiclistofstuff2write[i][j]
+        elif i == 9:
+            pass
+        else:
+            g += '%.4e\n'%magiclistofstuff2write[i]
+            
+    f = open('Results/%s'%output_fname, 'w')
+    f.write(g)
+    f.close()
