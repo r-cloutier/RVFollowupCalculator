@@ -65,6 +65,7 @@ def nRV_calculator(Kdetsig,
                         else float(sigRV_planets)
         sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planets**2)
     else:
+	sigRV_phot = 0.
         texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
                                                  throughput, R, SNRtarget,
                                                  texpmin, texpmax)
