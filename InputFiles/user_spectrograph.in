@@ -7,9 +7,9 @@ YJH
 ## Telescope aperture (in meters)
 3.6
 ## Throughput
-1e-1
+0.1
 ## RV noise floor (in m/s)
-5e-1
+1
 ## Central wavelength where the target signal-to-noise ratio (SNR) is specified (in nm)
 1250
 ## Target signal-to-noise ratio per resolution element
@@ -20,5 +20,5 @@ YJH
 10
 ## Maximum exposure time (in minutes)
 60
-## Overhead time (in minutes)
+## Assumed overhead time (in minutes)
 5
