@@ -500,7 +500,8 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture, throughput, R,
         return float(fint(SNRtarget))
 
 
-def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold):
+def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold,
+			     transmission_fname='tapas_000001.ipac'):
     '''
     Remove wavelengths that are sampled at wavelengths affected by tellurics 
     at the level more than a specified threshold.
@@ -526,7 +527,7 @@ def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold):
     assert wl_band.size == W.size
     print 'Masking %s band telluric regions where '%band_str + \
         'transmission > %.2f percent'%(1. - transmission_threshold)
-    wlTAPAS, transTAPAS = np.loadtxt('InputData/tapas_000001.ipac', \
+    wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname, \
                                      skiprows=23).T
     wlTAPAS *= 1e-3
 

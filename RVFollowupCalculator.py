@@ -94,7 +94,7 @@ def _read_planet_input(input_planet_fname):
     f = open('InputFiles/%s'%input_planet_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[5]), float(g[7]), float(g[9])
+    return float(g[3]), float(g[5]), float(g[7])
 
 
 def _read_star_input(input_star_fname):
@@ -104,8 +104,8 @@ def _read_star_input(input_star_fname):
     f = open('InputFiles/%s'%input_star_fname, 'r')
     g = f.readlines()
     f.close()
-    return np.ascontiguousarray(g[5].split(',')).astype(float), \
-        float(g[7]), float(g[9]), float(g[11]), float(g[13]), float(g[15])
+    return np.ascontiguousarray(g[3].split(',')).astype(float), \
+        float(g[5]), float(g[7]), float(g[9]), float(g[11]), float(g[13])
 
 
 def _read_spectrograph_input(input_spectrograph_fname):
@@ -115,9 +115,9 @@ def _read_spectrograph_input(input_spectrograph_fname):
     f = open('InputFiles/%s'%input_spectrograph_fname, 'r')
     g = f.readlines()
     f.close()
-    return np.ascontiguousarray(list(g[5])[:-1]), float(g[7]), float(g[9]), \
-        float(g[11]), float(g[13]), float(g[15]), float(g[17]), float(g[19]), \
-        float(g[21]), float(g[23]), float(g[25])
+    return np.ascontiguousarray(list(g[3])[:-1]), float(g[5]), float(g[7]), \
+        float(g[9]), float(g[11]), float(g[13]), float(g[15]), float(g[17]), \
+        float(g[19]), float(g[21]), float(g[23])
 
 
 def _read_sigRV_input(input_sigRV_fname):
@@ -127,7 +127,7 @@ def _read_sigRV_input(input_sigRV_fname):
     f = open('InputFiles/%s'%input_sigRV_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[5]), float(g[7]), float(g[9])
+    return float(g[3]), float(g[5]), float(g[7])
 
 
 def _compute_logg(Ms, Rs):
