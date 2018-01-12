@@ -1,14 +1,14 @@
 ## user_star.in
 ## The formatting of this input file is important and must remain unchanged to ensure the proper reading of the parameters contained within.
 ## Stellar magnitudes as comma-separated values. Must have the same number of entries as spectral band labels in user_spectrograph.in
-9.75,9.25,8.67
+11.26,10.76,10.38,10.31
 ## Stellar mass (in Solar masses)
-0.181
+0.93
 ## Stellar radius (in Solar radii)
-0.207
+0.86
 ## Effective temperature (in Kelvin)
-3270
+5378
 ## Metallicity (Fe/H)
--0.12
+0.16
 ## Projected stellar rotation velocity (in km/s)
-0.09
+2.7
