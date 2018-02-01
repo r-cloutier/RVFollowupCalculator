@@ -6,11 +6,12 @@ from imports import *
 from compute_sigmaRV import *
 from sigmaRV_activity import *
 from sigmaRV_planets import *
+from compute_nRV_GP import *
 
 global G
 G = 6.67e-11
 
-def nRV_calculator(Kdetsig,
+def nRV_calculator(Kdetsig, GPmodel=False
                    input_planet_fname='user_planet.in',
                    input_star_fname='user_star.in',
                    input_spectrograph_fname='user_spectrograph.in',
@@ -43,7 +44,7 @@ def nRV_calculator(Kdetsig,
     '''    
     # get inputs
     P, rp, mp = _read_planet_input(input_planet_fname)
-    mags, Ms, Rs, Teff, Z, vsini = _read_star_input(input_star_fname)
+    mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
     band_strs, R, aperture, throughput, RVnoisefloor, centralwl, SNRtarget, \
         transmission_threshold, texpmin, texpmax, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
@@ -74,9 +75,16 @@ def nRV_calculator(Kdetsig,
     mp = float(_get_planet_mass(rp)) if mp == 0 else float(mp)
     sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
-    # compute observing requirements
-    nRV = 2. * (sigRV_eff / sigK_target)**2
-    tobs = nRV * (texp + toverhead) / 60  # in hours
+    # compute number of RVs required for either a white or red noise model
+    if GPmodel:
+        GPtheta = sigRV_act, Prot*3, 2., Prot, sigRV_planets
+        keptheta = P, rvs.RV_K(P, Ms, mp)
+        nRV = compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target)
+    else:
+        nRV = 2. * (sigRV_eff / sigK_target)**2
+
+    # compute total observing time
+    tobs = nRV * (texp + toverhead) / 60.  # in hours
     
     # write results to file
     output = [P, rp, mp, mags, Ms, Rs, Teff, Z, vsini, band_strs, R, aperture,
@@ -106,7 +114,8 @@ def _read_star_input(input_star_fname):
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(g[3].split(',')).astype(float), \
-        float(g[5]), float(g[7]), float(g[9]), float(g[11]), float(g[13])
+        float(g[5]), float(g[7]), float(g[9]), float(g[11]), float(g[13]), \
+        float(g[15])
 
 
 def _read_spectrograph_input(input_spectrograph_fname):
