@@ -11,7 +11,7 @@ from compute_nRV_GP import *
 global G
 G = 6.67e-11
 
-def nRV_calculator(Kdetsig, GPmodel=False
+def nRV_calculator(Kdetsig,
                    input_planet_fname='user_planet.in',
                    input_star_fname='user_star.in',
                    input_spectrograph_fname='user_spectrograph.in',
@@ -75,22 +75,22 @@ def nRV_calculator(Kdetsig, GPmodel=False
     mp = float(_get_planet_mass(rp)) if mp == 0 else float(mp)
     sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
-    # compute number of RVs required for either a white or red noise model
-    if GPmodel:
-        GPtheta = sigRV_act, Prot*3, 2., Prot, sigRV_planets
-        keptheta = P, rvs.RV_K(P, Ms, mp)
-        nRV = compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target)
-    else:
-        nRV = 2. * (sigRV_eff / sigK_target)**2
+    # compute number of RVs required for a white and red noise model
+    GPtheta = sigRV_act, Prot*3, 2., Prot, sigRV_planets
+    keptheta = P, rvs.RV_K(P, Ms, mp)
+    nRVGP = compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target)
+    nRV = 2. * (sigRV_eff / sigK_target)**2
 
     # compute total observing time
     tobs = nRV * (texp + toverhead) / 60.  # in hours
+    tobsGP = nRVGP * (texp + toverhead) / 60.  # in hours
     
     # write results to file
     output = [P, rp, mp, mags, Ms, Rs, Teff, Z, vsini, band_strs, R, aperture,
               throughput, RVnoisefloor, centralwl*1e3, SNRtarget,
               transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot,
-              sigRV_act, sigRV_planets, sigRV_eff, sigK_target, nRV, texp, tobs]
+              sigRV_act, sigRV_planets, sigRV_eff, sigK_target, nRV, nRVGP,
+              texp, tobs, tobsGP]
     _write_results2file(output_fname, output)
 
     return nRV, texp, tobs
@@ -226,7 +226,7 @@ def _write_results2file(output_fname, magiclistofstuff2write):
     maglabels = ''
     for i in range(magiclistofstuff2write[3].size):
         maglabels += '%s magnitude\n'%magiclistofstuff2write[9][i]
-    hdr = 'Orbital period (days)\nPlanetary radius (Earth radii)\nPlanetary mass(Earth masses)\n%sStellar mass (Solar masses)\nStellar Radius (Solar radii)\nEffective temperature (K)\n[Fe/H] (Solar units)\nProjected rotation velocity (km/s)\nSpectral resolution\nAperture (meters)\nThroughput\nRV noise floor (m/s)\nReference wavelength (microns)\nTarget SNR\nMaximum fractional telluric absorption\nMinimum exposure time (minutes)\nMaximum exposure time (minutes)\nOverhead (minutes)\nPhoton noise limited RV (m/s)\nRV activity rms (m/s)\nAdditional planet RV rms (m/s)\nEffective RV rms (m/s)\nTarget K measurement uncertainty (m/s)\nNumber of RV measurements\nExposure time (minutes)\nTotal observing time (hours)'%maglabels
+    hdr = 'Orbital period (days)\nPlanetary radius (Earth radii)\nPlanetary mass(Earth masses)\n%sStellar mass (Solar masses)\nStellar Radius (Solar radii)\nEffective temperature (K)\n[Fe/H] (Solar units)\nProjected rotation velocity (km/s)\nSpectral resolution\nAperture (meters)\nThroughput\nRV noise floor (m/s)\nReference wavelength (microns)\nTarget SNR\nMaximum fractional telluric absorption\nMinimum exposure time (minutes)\nMaximum exposure time (minutes)\nOverhead (minutes)\nPhoton noise limited RV (m/s)\nRV activity rms (m/s)\nAdditional planet RV rms (m/s)\nEffective RV rms (m/s)\nTarget K measurement uncertainty (m/s)\nNumber of RV measurements\nNumber of RV measurements with GP\nExposure time (minutes)\nTotal observing time (hours)\nTotal observing time with GP (hours)'%maglabels
     hdr, hdrv2 = hdr.split('\n'), ''
     for i in range(len(hdr)):
         hdrv2 += '# %i: %s\n'%(i, hdr[i])

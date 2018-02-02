@@ -1,4 +1,6 @@
 from imports import *
+from PyAstronomy.pyasl import foldAt
+from compute_sigK_QPGP import compute_sigmaK_GP
 
 
 def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
@@ -15,7 +17,7 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
         gp = george.GP(a*(george.kernels.ExpSquaredKernel(l) + \
                           george.kernels.ExpSine2Kernel(G,Pgp)))
         t = _uniform_window_function(duration, Nrvs[i])
-        erv = np.repeat(sig_phot, t.size)
+        erv = np.repeat(sigRV_phot, t.size)
         gp.compute(t, np.sqrt(erv**2 + s**2))
         rv_act = gp.sample(t)
         rv_act *= a / rv_act.std()
@@ -24,7 +26,7 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
         rv_kep = -K*np.sin(2*np.pi*foldAt(t, P))
 
         # get total rv signal with noise
-        rv = rv_act + rv_kep + np.random.randn(t.size) * sig_phot
+        rv = rv_act + rv_kep + np.random.randn(t.size) * sigRV_phot
 
         # compute sigK
         theta = P, 0, K, a, l, G, Pgp, s

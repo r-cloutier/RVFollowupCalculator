@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import glob, sys, os, time
+import glob, sys, os, time, george
 import rvs_custom as rvs
 from uncertainties import unumpy as unp
 import astropy.io.fits as fits
