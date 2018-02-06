@@ -50,23 +50,28 @@ def nRV_calculator(Kdetsig,
                             _read_spectrograph_input(input_spectrograph_fname)
     assert texpmin < texpmax
     assert mags.size == band_strs.size
-    sigRV_act, sigRV_planets, sigRV_eff = _read_sigRV_input(input_sigRV_fname)
+    sig_phot, sigRV_act, sigRV_planets, sigRV_eff = _read_sigRV_input(input_sigRV_fname)
 
     # get RV noise sources if effective RV rms is not specified
     if sigRV_eff <= 0:
         logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
-        sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
-                                               vsini, R, aperture, throughput,
-                                               RVnoisefloor, centralwl,
-                                               SNRtarget,
-                                               transmission_threshold, texpmin,
-                                               texpmax)
+	if sigRV_phot > 0:
+	    texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
+                                                     throughput, R, SNRtarget,
+                                                     texpmin, texpmax)
+	else:
+            sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
+                                               	   vsini, R, aperture, throughput,
+                                               	   RVnoisefloor, centralwl,
+                                               	   SNRtarget,
+                                               	   transmission_threshold, texpmin,
+                                               	   texpmax)
         sigRV_act = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
         sigRV_planets = _get_sigRV_planets() if sigRV_planets < 0 \
                         else float(sigRV_planets)
         sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planets**2)
     else:
-	sigRV_phot = 0.
+	sigRV_act, sigRV_planets = sigRV_eff, 0.
         texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
                                                  throughput, R, SNRtarget,
                                                  texpmin, texpmax)
@@ -137,7 +142,7 @@ def _read_sigRV_input(input_sigRV_fname):
     f = open('InputFiles/%s'%input_sigRV_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[3]), float(g[5]), float(g[7])
+    return float(g[3]), float(g[5]), float(g[7]), float(g[9])
 
 
 def _compute_logg(Ms, Rs):
