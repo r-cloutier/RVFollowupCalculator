@@ -10,22 +10,43 @@
 \begin{document}
 \maketitle
 
-\section{Stellar parameters}
-<<mags>>
+\section{Input parameters}
+\subsection{Planetary parameters}
 \begin{tabular}{ll}
-Stellar mass [$M_{\odot}$] & <<Ms>> \\  
-Stellar radius [$R_{\odot}$] & <<Rs>> \\
-Effective temperture [$K$] & <<Teff>> \\
-Metallicity [Fe/H] & <<Z>> \\
-$v\sin{i_s}$ [km/s] & <<vsini>>
+  Orbital period [days] & <<P>> \\
+  Planetary radius [$R_{\oplus}$] & <<rp>> \\
+  Planetary mass [$M_{\oplus}$] & <<mp>> \\
+  RV semi-amplitude [m/s] & <<K>>
 \end{tabular}
 
-\title{<<title>>}
+\subsection{Stellar parameters}
+<<mags>> \\
 
-\begin{document}
-\maketitle
-\section{Stellar parameters}
-\begin
+\noindent
+\begin{tabular}{ll}
+  Stellar mass [$M_{\odot}$] & <<Ms>> \\  
+  Stellar radius [$R_{\odot}$] & <<Rs>> \\
+  Effective temperature [$K$] & <<Teff>> \\
+  Metallicity [Fe/H] & <<Z>> \\
+  $v\sin{i_s}$ [km/s] & <<vsini>> \\
+  Rotation period [days] & <<Prot>>
+\end{tabular}
 
+\subsection{Spectrograph parameters}
+\begin{tabular}{ll}
+  Spectral resolution [$\delta \lambda / \lambda$] & <<R>> \\
+  Telescope aperture [m] & <<aperture>> \\
+  Throughput & <<throughput>> \\
+  RV noise floor [m/s] & <<RVnoisefloor>> \\
+  Central wavelength [$\mu$m] & <<centralwl_microns>> \\ 
+  Target S/N per resolution element & <<SNRtarget>> \\
+  Maximum fractional telluric absorption & <<transmission_threshold>> \\
+  Minimum exposure time [min] & <<texpmin>> \\
+  Maximum exposure time [min] & <<texpmax>> \\
+  Overhead time [min] & <<toverhead>> \\
+  Photon-noise limited RV precision [m/s] & <<sigRV_phot>>
+\end{tabular}
+
+\section{Results}
 
 \end{document}

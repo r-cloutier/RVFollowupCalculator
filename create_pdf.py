@@ -1,6 +1,8 @@
 from imports import *
 
+
 def create_pdf(output_fname, magiclistofstuff2write):
+    
     g = write_pdf_str(output_fname, magiclistofstuff2write)
 
     # write latex file
@@ -9,13 +11,15 @@ def create_pdf(output_fname, magiclistofstuff2write):
     h.write(g)
     h.close()
 
-    # create the pdf
+    # create the pdf and clean up
     os.system('pdflatex %s'%tex_fname)
-    os
+    os.system('mv %s.pdf Results/'%output_fname)
+    os.system('rm %s*'%output_fname)
+
 
     
 def write_pdf_str(output_fname, magiclistofstuff2write):
-    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, SNRtarget, transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot, sigRV_act, sigRV_planets, sigRV_eff, sigK_target, nRV, nRVGP, texp, tobs, tobsGP = magiclistofstuff2write
+    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, SNRtarget, transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets, sigRV_eff, sigK_target, nRV, nRVGP, texp, tobs, tobsGP = magiclistofstuff2write
     Kdetsig = K / sigK_target
     
     # open/modify latex template
@@ -27,6 +31,10 @@ def write_pdf_str(output_fname, magiclistofstuff2write):
     magstr = ', '.join(['%s = %.2f'%(band_strs[i], mags[i])
                         for i in range(len(mags))])
     g = g.replace('<<mags>>', magstr)
+    fastlist = ['P', 'rp', 'mp', 'K', 'Ms', 'Rs', 'Teff', 'Z', 'vsini', 'Prot', 'R', 'aperture', 'throughput', 'RVnoisefloor', 'centralwl_microns', 'SNRtarget', 'transmission_threshold', 'texpmin', 'texpmax', 'toverhead', 'sigRV_phot']
+    for i in range(len(fastlist)):
+        fmt = '%i' if fastlist[i] in ['Teff','R'] else '%.2f'
+        g = g.replace('<<%s>>'%fastlist[i], fmt%eval(fastlist[i]))
 
-
+        
     return g
