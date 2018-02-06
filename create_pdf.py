@@ -5,6 +5,16 @@ def create_pdf(output_fname, magiclistofstuff2write):
     
     g = write_pdf_str(output_fname, magiclistofstuff2write)
 
+    # create plots if necessary
+    sigRV_acts, sigRV_planets, sigRV_effs,_,_,nRVs, nRVGPs, tobss, tobsGPs = magiclistofstuff2write[-9:]
+    if sigRV_acts.size > 0:
+        plot_hist(np.array([sigRV_acts, sigRV_planets, sigRV_effs]).T,
+                  '%s_sigRVs.png'%output_fname)
+        plot_hist(np.array([nRVs, nRVGPs]).T, '%s_nRVs.png'%output_fname)
+        plot_hist(np.array([tobss, tobsGPs]).T, '%s_tobs.png'%output_fname)
+        figures = True
+        
+        
     # write latex file
     tex_fname = '%s.tex'%output_fname
     h = open(tex_fname, 'w')
@@ -19,7 +29,7 @@ def create_pdf(output_fname, magiclistofstuff2write):
 
     
 def write_pdf_str(output_fname, magiclistofstuff2write):
-    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, SNRtarget, transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets, sigRV_eff, sigK_target, nRV, nRVGP, texp, tobs, tobsGP = magiclistofstuff2write
+    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, SNRtarget, transmission_threshold, texpmin, texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets, sigRV_effs, sigK_target, texp, nRVs, nRVGPs, tobss, tobsGPs = magiclistofstuff2write
     Kdetsig = K / sigK_target
     
     # open/modify latex template
@@ -35,6 +45,14 @@ def write_pdf_str(output_fname, magiclistofstuff2write):
     for i in range(len(fastlist)):
         fmt = '%i' if fastlist[i] in ['Teff','R'] else '%.2f'
         g = g.replace('<<%s>>'%fastlist[i], fmt%eval(fastlist[i]))
-
         
     return g
+
+
+def plot_hist(arr, labels, outp):
+    Ntrials, Narr = arr.shape
+    fig = plt.figure(figsize=(6,4))
+    ax = fig.add_subplot(111)
+    cols = ['b', 'g', 'r', 'k', 'c']
+    for i in range(Narr):
+        print 'h'
