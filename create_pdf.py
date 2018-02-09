@@ -9,11 +9,14 @@ def create_pdf(output_fname, magiclistofstuff2write):
     sigRV_acts, sigRV_planets, sigRV_effs,_,_,nRVs, nRVGPs, tobss, tobsGPs = magiclistofstuff2write[-9:]
     if sigRV_acts.size > 0:
         plot_hist(np.array([sigRV_acts, sigRV_planets, sigRV_effs]).T,
+                  ['RV activity', 'RV planets', 'Effective RV'],
                   '%s_sigRVs.png'%output_fname)
-        plot_hist(np.array([nRVs, nRVGPs]).T, '%s_nRVs.png'%output_fname)
-        plot_hist(np.array([tobss, tobsGPs]).T, '%s_tobs.png'%output_fname)
-        figures = True
-        
+        plot_hist(np.array([nRVs, nRVGPs]).T, ['nRV (white)', 'nRV (w/ GP)'],
+                  '%s_nRVs.png'%output_fname)
+        plot_hist(np.array([tobss, tobsGPs]).T,
+                  ['Observing time (white)','Observing time (w/ GP)'],
+                  '%s_tobs.png'%output_fname)
+        figures = True        
         
     # write latex file
     tex_fname = '%s.tex'%output_fname
@@ -49,10 +52,18 @@ def write_pdf_str(output_fname, magiclistofstuff2write):
     return g
 
 
-def plot_hist(arr, labels, outp):
+def plot_hist(arr, labels, fname):
     Ntrials, Narr = arr.shape
+    assert len(labels) == Narr
+    
     fig = plt.figure(figsize=(6,4))
     ax = fig.add_subplot(111)
     cols = ['b', 'g', 'r', 'k', 'c']
     for i in range(Narr):
-        print 'h'
+        ax.hist(arr[:,i], bins=int(Ntrials/20), histtype='step',
+                color=cols[i], lw=3, label=labels[i])
+
+    ax.set_xlabel(xlabel), ax.set_ylabel('Number of trials')
+    ax.legend()
+    plt.savefig(fname)
+    plt.close('all')

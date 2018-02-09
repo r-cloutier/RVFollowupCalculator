@@ -1,0 +1,24 @@
+## user_spectrograph.in
+## The formatting of this input file is important and must remain unchanged to ensure the proper reading of the parameters contained within.
+## Spectral band labels (chosen from the list of possible values [U,B,V,R,I,Y,J,H,K])
+<<bands>>
+## Spectral resolution (lambda / delta lambda)
+<<R>>
+## Telescope aperture (in meters)
+<<aperture>>
+## Throughput
+<<throughput>>
+## RV noise floor (in m/s)
+<<floor>>
+## Central wavelength where the target signal-to-noise ratio (SNR) is specified (in nm)
+<<wlcen>>
+## Target signal-to-noise ratio per resolution element
+<<targetsnr>>
+## Telluric absorption upper limit (in [0,1])
+<<maxtelluric>>
+## Minimum exposure time (in minutes)
+<<mintexp>>
+## Maximum exposure time (in minutes)
+<<maxtexp>>
+## Assumed overhead time (in minutes)
+<<overhead>>
