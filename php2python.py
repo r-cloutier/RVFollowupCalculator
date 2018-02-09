@@ -1,11 +1,11 @@
-import os
+import os, sys
 from RVFollupCalculator import *
 
 
 def update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
                        maxtelluric, mintexp, maxtexp, overhead, sigRVphot,
                        sigRVact, sigRVplanets, sigRVeff, P, rp, mp, mags, Ms,
-                       Rs, Teff, vsini, Prot):
+                       Rs, Teff, Z, vsini, Prot):
     # update spectrograph
     f = open('InputFiles/user_spectrograph_template.in', 'r')
     g = f.read()
@@ -64,12 +64,48 @@ def update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
     h.close()
 
 
-def run_calculator():
-    nRV, texp, tobs = nRV_calculator(Kdetsig,
-                                     input_planet_fname='user_planet.in',
-                                     input_star_fname='user_star.in',
-                                     input_spectrograph_fname='user_spectrograph.in',
-                                     input_sigRV_fname='user_sigRV.in',
-                                     output_fname='RVFCoutput',
-                                     Ntrials=1)
+def run_calculator(Kdetsig, Ntrials):
+    _,_,_ = nRV_calculator(Kdetsig,
+                           input_planet_fname='user_planet.in',
+                           input_star_fname='user_star.in',
+                           input_spectrograph_fname='user_spectrograph.in',
+                           input_sigRV_fname='user_sigRV.in',
+                           output_fname='RVFCoutput',
+                           Ntrials=1)
 
+    
+if __name__ == '__main__':
+    bands = list(sys.argv[1])
+    R = float(sys.argv[2])
+    aperture = float(sys.argv[3])
+    throughput = float(sys.argv[4])
+    floor = float(sys.argv[5])
+    wlcen = float(sys.argv[6])
+    targetsnr = float(sys.argv[7])
+    maxtelluric = float(sys.argv[8])
+    mintexp = float(sys.argv[9])
+    maxtexp = float(sys.argv[10])
+    overhead = float(sys.argv[11])
+    sigRVphot = float(sys.argv[12])
+    sigRVact = float(sys.argv[13])
+    sigRVplanets = float(sys.argv[14])
+    sigRVeff = float(sys.argv[15])
+    P = float(sys.argv[16])
+    rp = float(sys.argv[17])
+    mp = float(sys.argv[18])
+    mags = list(sys.argv[19])
+    Ms = float(sys.argv[20])
+    Rs = float(sys.argv[21])
+    Teff = float(sys.argv[22])
+    Z = float(sys.argv[23])
+    vsini = float(sys.argv[24])
+    Prot = float(sys.argv[25])
+    Kdetsig = float(sys.argv[26])
+    Ntrials = float(sys.argv[27])
+    
+    update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
+                       maxtelluric, mintexp, maxtexp, overhead, sigRVphot,
+                       sigRVact, sigRVplanets, sigRVeff, P, rp, mp, mags, Ms,
+                       Rs, Teff, Z, vsini, Prot):
+
+    run_calulator(Kdetsig, Ntrials)
