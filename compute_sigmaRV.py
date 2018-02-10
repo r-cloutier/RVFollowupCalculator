@@ -501,7 +501,7 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture, throughput, R,
 
 
 def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold,
-			     transmission_fname='tapas_000001.ipac'):
+                             wl_telluric, trans_telluric):
     '''
     Remove wavelengths that are sampled at wavelengths affected by tellurics 
     at the level more than a specified threshold.
@@ -527,27 +527,24 @@ def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold,
     assert wl_band.size == W.size
     print 'Masking %s band telluric regions where '%band_str + \
         'transmission > %.2f percent'%(1. - transmission_threshold)
-    wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname, \
-                                     skiprows=23).T
-    wlTAPAS *= 1e-3
-
+    
     # remove rayleigh continuum via boxcar smoothing if passband is in
     # that regime
     if np.any(wl_band <=.8):
-        boxsteps = np.arange(wlTAPAS.min(), wlTAPAS.max(), 1e-2)
-        transTAPAS_continuum = np.zeros(boxsteps.size-1)
+        boxsteps = np.arange(wl_telluric.min(), wl_telluric.max(), 1e-2)
+        trans_telluric_continuum = np.zeros(boxsteps.size-1)
     	for i in range(boxsteps.size-1):
-	    transTAPAS_continuum[i] = np.max(transTAPAS[(wlTAPAS >= \
-                                                         boxsteps[i]) \
-                                                        & (wlTAPAS <= \
-                                                           boxsteps[i+1])])
+	    trans_telluric_continuum[i] = \
+                    trans_telluric[(wl_telluric >= boxsteps[i]) \
+                                   & (wl_telluric <= boxsteps[i+1])].max()
 	fint = interp1d(boxsteps[1:]-np.diff(boxsteps)[0]*.5,
-                        transTAPAS_continuum,
+                        trans_telluric_continuum,
                         bounds_error=False, fill_value=.878)
-	transTAPAS = transTAPAS - fint(wlTAPAS) + 1.
+	trans_telluric = trans_telluric - fint(wl_telluric) + 1.
 
     # resample the wavelength grid
-    fint = interp1d(wlTAPAS, transTAPAS, bounds_error=False, fill_value=0)
+    fint = interp1d(wl_telluric, trans_telluric, bounds_error=False,
+                    fill_value=0)
     transmission = fint(wl_band)
 
     # only keep where transmission > 1-threshold
@@ -589,7 +586,8 @@ def compute_W(wl_band, spec_band):
 
 
 def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture,
-                    throughput, R, transmission_threshold, SNRtarget):
+                    throughput, R, transmission_threshold, wl_telluric,
+                    trans_telluric, SNRtarget):
     '''
     Compute the photon-noise limit of the RV precision from the information 
     content in the spectrum, over a particular band, and the characteristics 
@@ -631,7 +629,8 @@ def compute_sigmaRV(wl_band, spec_band, mag, band_str, texp, aperture,
     
     # remove tellurics
     W_clean = _remove_tellurics_from_W(band_str, wl_band, W,
-                                       transmission_threshold)
+                                       transmission_threshold, wl_telluric,
+                                       trans_telluric)
     g = np.arange(W_clean.size) #np.arange(4, W_clean.size-4, dtype=int)
     sigmaRV = c / np.sqrt(np.sum(W_clean[g]))
 

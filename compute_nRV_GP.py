@@ -20,7 +20,6 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
         erv = np.repeat(sigRV_phot, t.size)
         gp.compute(t, np.sqrt(erv**2 + s**2))
         rv_act = gp.sample(t)
-        ##rv_act *= a / rv_act.std()
 
         # get planet model
         rv_kep = -K*np.sin(2*np.pi*foldAt(t, P))
@@ -40,9 +39,5 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
 
 
 def _uniform_window_function(duration, Nrv):
-    return np.linspace(0, duration, Nrv)
-
-
-def powerlawfunc(xarr, A, alpha, c):
-    xarr = np.ascontiguousarray(xarr)
-    return A * xarr.astype('float')**alpha + c
+    t = np.random.rand(Nrv) * duration
+    return np.sort(t)

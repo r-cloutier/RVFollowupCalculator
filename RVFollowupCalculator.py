@@ -50,67 +50,97 @@ def nRV_calculator(Kdetsig,
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
     band_strs, R, aperture, throughput, RVnoisefloor, centralwl_nm, SNRtarget, \
-        transmission_threshold, texpmin, texpmax, toverhead = \
+        maxtelluric, texpmin, texpmax, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
-    assert texpmin < texpmax
-    assert mags.size == band_strs.size
-    sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = _read_sigRV_input(input_sigRV_fname)
+    sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
+                                        _read_sigRV_input(input_sigRV_fname)
 
-    # get RV noise sources if effective RV rms is not specified
-    Ntrial = int(Ntrials)
+    # checks
+    if (maxtelluric < 0) or (maxtelluric >= 1):
+        raise ValueError('Invalid telluric transmittance value.')
+    if texpmin >= texpmax:
+        raise ValueError('texpmin must be < texpmax.')
+    if mags.size != band_strs.size:
+        raise ValueError('Must have the same number of magnitudes as bands.')
+    if (throughput <= 0) or (throughput >= 1):
+        raise ValueError('Invalid throughput value.')
+    Ntrials = int(Ntrials)
     assert Ntrials > 0
-    if sigRV_eff <= 0:
-        logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
+    
+    texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
+                                             throughput, R, SNRtarget,
+                                             texpmin, texpmax)
 
-	if sigRV_phot > 0:
-	    texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
-                                                     throughput, R, SNRtarget,
-                                                     texpmin, texpmax)
-	else:
-            sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg, Z,
-                                               	   vsini, R, aperture, throughput,
-                                               	   RVnoisefloor, centralwl_nm,
-                                               	   SNRtarget,
-                                               	   transmission_threshold, texpmin,
-                                               	   texpmax)
-
-        sigRV_acts, sigRV_planets = np.zeros(Ntrials), np.zeros(Ntrials)
-        for i in range(Ntrials):      
-            sigRV_acts[i] = _get_sigRV_act() if sigRV_act < 0 else float(sigRV_act)
-            sigRV_planets[i] = _get_sigRV_planets() if sigRV_planet < 0 \
-                               else float(sigRV_planet)
-        sigRV_effs = np.sqrt(sigRV_phot**2 + sigRV_acts**2 + sigRV_planets**2)
-
-    else:
-	sigRV_acts, sigRV_planets = np.repeat(sigRV_eff, Ntrials), np.zeros(Ntrials)
+    # compute RV noise source if sigRV_eff is not set
+    if sigRV_eff > 0:
         sigRV_effs = np.repeat(sigRV_eff, Ntrials)
-        texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
-                                                 throughput, R, SNRtarget,
-                                                 texpmin, texpmax)
+        sigRV_phots, sigRV_acts, sigRV_planets = np.zeros(Ntrials), \
+                                                 np.zeros(Ntrials), \
+                                                 np.zeros(Ntrials)
+
+    # compute sigRV_eff from other sources
+    else:
+        
+        # compute sigRV_phot once
+        if sigRV_phot <= 0:
+            transmission_fname = 'tapas_000001.ipac'
+            wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname,
+                                             skiprows=23).T
+            wlTAPAS *= 1e-3  # microns
+            logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
+            sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg,
+                                                   Z, vsini, R, aperture,
+                                                   throughput, RVnoisefloor,
+                                                   centralwl_nm, SNRtarget,
+                                                   maxtelluric,
+                                                   texpmin, texpmax,
+                                                   wlTAPAS, transTAPAS)
+
+        # get RV noise sources
+        Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
+        B_V = Bmag - Vmag
+        sigRV_acts = np.repeat(sigRV_act, Ntrials) if sigRV_act >= 0 \
+                     else np.array([get_sigmaRV_activity(Teff, Ms, Prot, B_V)
+                                    for i in range(Ntrials)])
+        sigRV_planets = np.repeat(sigRV_planet, Ntrials) if sigRV_planet >= 0 \
+                        else np.array([get_sigmaRV_planets(P, rp, Teff, Ms,
+                                                           mult, sigRV_phot)
+                                       for i in range(Ntrials)])
+
+        # compute sigRV_eff
+        sigRV_phots = np.repeat(sigRV_phot, Ntrials)
+        sigRV_effs = np.sqrt(sigRV_phots**2 + sigRV_acts**2 + sigRV_planets**2)
+
 
     # get target K measurement uncertainty
     mp = float(_get_planet_mass(rp)) if mp == 0 else float(mp)
-    sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
+    K, sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
     # compute number of RVs required for a white and red noise model
     nRVs, nRVGPs = np.zeros(Ntrials), np.zeros(Ntrials)
+    aGPs = sigRV_acts if np.any(sigRV_acts != 0) else sigRV_effs
+    lambda_factors = 3 + np.random.randn(Ntrials) * .1
+    Gammas = 2 + np.random.randn(Ntrials) * .1
     for i in range(Ntrials):
-        GPtheta = sigRV_acts[i], Prot*3, 2., Prot, sigRV_planets[i]
-        keptheta = P, rvs.RV_K(P, Ms, mp)
-        nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target)
+        lambda_factor = np.random.randn()
+        GPtheta = aGPs[i], Prot*lambda_factors[i], Gammas[i], Prot, \
+                  sigRV_planets[i]
+        keptheta = P, K
+        nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target
+                                   duration=100)
         nRVs[i] = 2. * (sigRV_effs[i] / sigK_target)**2
 
-    # compute total observing time
-    tobss = nRVs * (texp + toverhead) / 60.  # in hours
-    tobsGPs = nRVGPs * (texp + toverhead) / 60.  # in hours
+    # compute total observing time in hours
+    tobss = nRVs * (texp + toverhead) / 60.
+    tobsGPs = nRVGPs * (texp + toverhead) / 60.
     
     # write results to file
     output = [P, rp, mp, rvs.RV_K(P, Ms, mp),
               mags, Ms, Rs, Teff, Z, vsini, Prot,
-              band_strs, R, aperture, throughput, RVnoisefloor, centralwl_nm*1e-3, SNRtarget,
-              transmission_threshold, texpmin, texpmax, toverhead,
-              sigRV_phot, sigRV_acts, sigRV_planets, sigRV_effs, sigK_target,
-              texp, nRVs, nRVGPs, tobss, tobsGPs]
+              band_strs, R, aperture, throughput, RVnoisefloor,
+              centralwl_nm*1e-3, SNRtarget, maxtelluric, texpmin,
+              texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets,
+              sigRV_effs, sigK_target, texp, nRVs, nRVGPs, tobss, tobsGPs]
     #_write_results2file(output_fname, output)
     create_pdf(output_fname, output)
 
@@ -171,7 +201,8 @@ def _compute_logg(Ms, Rs):
 
 def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
                         throughput, RVnoisefloor, centralwl_nm, SNRtarget,
-                        transmission_threshold, texpmin, texpmax):
+                        transmission_threshold, texpmin, texpmax, wl_telluric,
+                        trans_telluric):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
     full spectral domain.
@@ -188,7 +219,7 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
     texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
                                              throughput, R, SNRtarget,
                                              texpmin=texpmin, texpmax=texpmax)
-
+    
     # compute sigmaRV in each band for a fixed texp
     sigmaRVs = np.zeros(mags.size)
     for i in range(sigmaRVs.size):
@@ -198,7 +229,8 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
                                         SNRtarget)
         sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
                                       aperture, throughput, R,
-                                      transmission_threshold, SNRtarget)
+                                      transmission_threshold, wl_telluric,
+                                      trans_telluric, SNRtarget)
         print 'Took %.1f seconds\n'%(time.time()-t0)
         
     # compute sigmaRV over all bands
@@ -233,12 +265,76 @@ def _get_planet_mass(rps, Fs=336.5):
 
 def _get_sigK(Kdetsig, P, Ms, mp):
     '''
-    Compute the desired semi-ampliutde detection measurement uncertainty.
+    Compute the desired semi-amplitude detection measurement uncertainty.
     '''
     K = rvs.RV_K(P, Ms, mp)
-    return K / float(Kdetsig)
+    return K, K / float(Kdetsig)
 
 
+def _get_magnitudes(band_strs, mags, Ms):
+    # Use isochrone colours to compute mags in each band of interest
+    # solar metallicity at a fixed age of 10^9 yrs
+    MU, MB, MV, MR, MI, MY, MJ, MH, MK = _get_absolute_stellar_magnitudes(Ms)
+
+    # only consider V or J as reference bands. could use more...
+    assert ('V' in band_strs) or ('J' in band_strs)
+    if 'V' in band_strs:
+        ref_band, ref_mag, ref_absmag = 'V', mags[band_strs == 'V'], MV
+    else:
+        ref_band, ref_mag, ref_absmag = 'J', mags[band_strs == 'J'], MJ
+
+    Bmag = MB - ref_absmag + ref_mag
+    Vmag = MV - ref_absmag + ref_mag
+
+    return Bmag, Vmag
+
+
+def _get_absolute_stellar_magnitudes(Ms):
+    '''
+    Get the absolute magnitudes of a star with a given stellar mass at a 
+    given age using the isochrones from 2005A&A...436..895G
+
+    Parameters
+    ----------
+    `Ms': scalar
+        The stellar mass in MSun
+    
+    Returns
+    -------
+    `mags': numpy.array
+        The absolute magnitudes of the star 
+
+    '''
+    # Appoximate MS lifetime to see at what age to obtain colours
+    logtMS_yrs = np.log10(1e10 * (1./Ms)**(2.5))
+    logage = round(logtMS_yrs*.77 / 5e-2) * 5e-2   # get ~3/4 through MS
+
+    # First set of isochrones (ubvri)
+    logages,Mss,Mus,Mbs,Mvs,Mrs,Mis,Mjs,Mhs,Mks = \
+                                np.loadtxt('InputData/isoc_z019_ubvrijhk.dat',
+                                usecols=(0,1,7,8,9,10,11,12,13,14)).T
+    g = abs(logages-logage) == np.min(abs(logages-logage))
+    Mss,Mus,Mbs,Mvs,Mrs,Mis,Mjs,Mhs,Mks = Mss[g],Mus[g],Mbs[g],Mvs[g],Mrs[g], \
+                                          Mis[g],Mjs[g],Mhs[g],Mks[g]
+    g = abs(Mss-Ms) == np.min(abs(Mss-Ms))
+    if g.sum() > 1:
+	g = np.where(g)[0][0]
+    Mu,Mb,Mv,Mr,Mi,Mj,Mh,Mk = Mus[g],Mbs[g],Mvs[g],Mrs[g],Mis[g],Mjs[g], \
+                              Mhs[g],Mks[g]
+    # Second set of isochrones (ZYJHK)
+    logages2,Mss2,MZs,MYs,MJs,MHs,MKs = \
+                                np.loadtxt('InputData/isoc_z019_ZYJHK.dat',
+                                usecols=(0,1,7,8,9,10,11)).T
+    g = abs(logages2-logage) == np.min(abs(logages2-logage))
+    Mss2,MZs,MYs,MJs,MHs,MKs = Mss2[g],MZs[g],MYs[g],MJs[g],MHs[g],MKs[g]
+    g = abs(Mss2-Ms) == np.min(abs(Mss2-Ms))
+    if g.sum() > 1:
+	g = np.where(g)[0][0]
+    MZ,MY,MJ,MH,MK = MZs[g],MYs[g],MJs[g],MHs[g],MKs[g]    
+
+    return Mu, Mb, Mv, Mr, Mi, MY, MJ, MH, MK 
+    
+    
 def _write_results2file(output_fname, magiclistofstuff2write):
     '''
     Write the resulting parameters to a .dat file.
