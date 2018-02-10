@@ -1,5 +1,5 @@
 import os, sys
-from RVFollupCalculator import *
+from RVFollowupCalculator import *
 
 
 def update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
