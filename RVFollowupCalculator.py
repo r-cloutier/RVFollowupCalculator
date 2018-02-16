@@ -104,10 +104,12 @@ def nRV_calculator(Kdetsig,
     K, sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
     # compute number of RVs required for a white and red noise model
+    print 'Computing nRVs...' 
     nRVs, nRVGPs = np.zeros(Ntrials), np.zeros(Ntrials)
     aGPs = sigRV_acts if np.any(sigRV_acts != 0) else sigRV_effs
     lambda_factors = 3 + np.random.randn(Ntrials) * .1
     Gammas = 2 + np.random.randn(Ntrials) * .1
+    t0 = time.time()
     for i in range(Ntrials):
         lambda_factor = np.random.randn()
         GPtheta = aGPs[i], Prot*lambda_factors[i], Gammas[i], Prot, \
@@ -121,6 +123,7 @@ def nRV_calculator(Kdetsig,
     # compute total observing time in hours
     tobss = nRVs * (texp + toverhead) / 60.
     tobsGPs = nRVGPs * (texp + toverhead) / 60.
+    print '%i trials took %.3f minutes.'%(Ntrials, (time.time()-t0)/60.)
     
     # write results to file
     output = [P, rp, mp, rvs.RV_K(P, Ms, mp),
@@ -130,8 +133,7 @@ def nRV_calculator(Kdetsig,
               texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets,
               sigRV_effs, sigK_target, texp, nRVs, nRVGPs, tobss, tobsGPs]
     ##_write_results2file(output_fname, output)
-    #create_pdf(output_fname, output)
-    return output_fname, output 
+    create_pdf(output_fname, output)
 
 
 def _read_planet_input(input_planet_fname):
