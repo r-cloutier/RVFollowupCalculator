@@ -1,4 +1,5 @@
 \documentclass[a4paper]{article}
+\usepackage[top=0.5cm, left=2cm, right=1cm, bottom=2cm]{geometry}
 \usepackage[english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
@@ -11,7 +12,7 @@
 \maketitle
 
 \section{Input parameters}
-\subsection{Planetary parameters}
+\subsection{Planet parameters}
 \begin{tabular}{ll}
   Orbital period [days] & <<P>> \\
   Planetary radius [$R_{\oplus}$] & <<rp>> \\
@@ -44,13 +45,20 @@
   Minimum exposure time [min] & <<texpmin>> \\
   Maximum exposure time [min] & <<texpmax>> \\
   Overhead time [min] & <<toverhead>> \\
-  \textbf{Photon-noise limited RV precision [m/s]} & \textbf{<<sigRV_phot>>}
+\end{tabular}
+
+\subsection{RV noise sources}
+\begin{tabular}{ll}
+  Photon-noise limited RV precision [m/s] & <<sigRV_phot>> \\
+  <<sigRV_act>> \\
+  <<sigRV_planets>> \\
+  <<sigRV_eff>>
 \end{tabular}
 
 \pagebreak
 
 \section{Results}
-
+Desired $K$ detection significance = <<Kdetsig>>$\sigma$ (i.e. $\sigma_{\text{K}} =$ <<sigK_target>> m/s)
 
 
 \end{document}

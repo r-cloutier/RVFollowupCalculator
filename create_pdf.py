@@ -2,12 +2,17 @@ from imports import *
 
 
 def create_pdf(output_fname, magiclistofstuff2write):
-    
+
+    # make sure the output names are not common with any scripts
+    assert output_fname not in [s[:-3] for s in glob.glob('*py')]
+
+    # add parameters to tex file
     g = write_pdf_str(output_fname, magiclistofstuff2write)
 
     # create plots if necessary
-    sigRV_acts, sigRV_planets, sigRV_effs,_,_,nRVs, nRVGPs, tobss, tobsGPs = magiclistofstuff2write[-9:]
-    if sigRV_acts.size > 0:
+    sigRV_acts, sigRV_planets, sigRV_effs,_,_,nRVs, nRVGPs, tobss, tobsGPs = \
+                                                    magiclistofstuff2write[-9:]
+    if sigRV_acts.size > 1:
         plot_hist(np.array([sigRV_acts, sigRV_planets, sigRV_effs]).T,
                   ['RV activity', 'RV planets', 'Effective RV'],
                   '%s_sigRVs.png'%output_fname)
@@ -40,14 +45,42 @@ def write_pdf_str(output_fname, magiclistofstuff2write):
     g = f.read()
     f.close()
 
+    # add parameters
     g = g.replace('<<title>>', output_fname)
     magstr = ', '.join(['%s = %.2f'%(band_strs[i], mags[i])
                         for i in range(len(mags))])
     g = g.replace('<<mags>>', magstr)
-    fastlist = ['P', 'rp', 'mp', 'K', 'Ms', 'Rs', 'Teff', 'Z', 'vsini', 'Prot', 'R', 'aperture', 'throughput', 'RVnoisefloor', 'centralwl_microns', 'SNRtarget', 'transmission_threshold', 'texpmin', 'texpmax', 'toverhead', 'sigRV_phot']
+    fastlist = ['P', 'rp', 'mp', 'K', 'Ms', 'Rs', 'Teff', 'Z', 'vsini', 'Prot',
+                'R', 'aperture', 'throughput', 'RVnoisefloor',
+                'centralwl_microns', 'SNRtarget', 'transmission_threshold',
+                'texpmin', 'texpmax', 'toverhead', 'sigRV_phot', 'Kdetsig',
+                'sigK_target']
     for i in range(len(fastlist)):
-        fmt = '%i' if fastlist[i] in ['Teff','R'] else '%.2f'
+        if fastlist[i] in ['Teff','R']:
+            fmt = '%i'
+        elif fastlist[i] in ['Ms','Rs','sigK_target']:
+            fmt = '%.3f'
+        elif fastlist[i] in ['Kdetsig']:
+            fmt = '%.1f'
+        else:
+            fmt = '%.2f'
         g = g.replace('<<%s>>'%fastlist[i], fmt%eval(fastlist[i]))
+
+    # add sigRVs depending on size
+    if sigRV_acts.size > 1:
+        g = g.replace('<<sigRV_act>>',
+            'Median RV rms from activity [m/s] & %.2f'%(np.median(sigRV_acts)))
+        g = g.replace('<<sigRV_planets>>',
+'Median RV rms from additional planets [m/s] & %.2f'%(np.median(sigRV_planets)))
+        g = g.replace('<<sigRV_eff>>',
+        'Median effective RV precision [m/s] & %.2f'%(np.median(sigRV_effs)))
+    else:
+        g = g.replace('<<sigRV_act>>',
+                      'RV rms from activity [m/s] & %.2f'%float(sigRV_acts))
+        g = g.replace('<<sigRV_planets>>',
+            'RV rms from additional planets [m/s] & %.2f'%float(sigRV_planets))
+        g = g.replace('<<sigRV_eff>>',
+        'Effective RV precision [m/s] & %.2f'%float(sigRV_effs))        
         
     return g
 

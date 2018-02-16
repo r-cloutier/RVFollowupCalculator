@@ -1,7 +1,3 @@
-'''
-Compute nRV for all TESS targets using the code cloned from
-https://github.com/r-cloutier/Transiting_RVcalculator.git
-'''
 from imports import *
 from compute_sigmaRV import *
 from sigmaRV_activity import *
@@ -35,18 +31,6 @@ def nRV_calculator(Kdetsig,
     `runGP': boolean
         If True, compute nRV with a GP. Significantly faster if False. 
 
-    Returns
-    -------
-    `nRV': float
-        The number of RV measurements required to detect the planet's RV 
-        semi-amplitude with a detection significance of `Kdetsig'
-    `texp': float
-        The exposure time in minutes required to achieve a SNR of SNRtarget 
-        (see input_spectrograph_fname) per resolution element
-    `tobs': float
-        The total observing time in hours required to detect the planet's RV 
-        semi-amplitude with a detection significance of `Kdetsig'
-
     '''    
     # get inputs
     P, rp, mp = _read_planet_input(input_planet_fname)
@@ -57,6 +41,7 @@ def nRV_calculator(Kdetsig,
     sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
                                         _read_sigRV_input(input_sigRV_fname)
 
+    
     # checks
     if (maxtelluric < 0) or (maxtelluric >= 1):
         raise ValueError('Invalid telluric transmittance value.')
@@ -144,8 +129,9 @@ def nRV_calculator(Kdetsig,
               centralwl_nm*1e-3, SNRtarget, maxtelluric, texpmin,
               texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets,
               sigRV_effs, sigK_target, texp, nRVs, nRVGPs, tobss, tobsGPs]
-    #_write_results2file(output_fname, output)
-    create_pdf(output_fname, output)
+    ##_write_results2file(output_fname, output)
+    #create_pdf(output_fname, output)
+    return output_fname, output 
 
 
 def _read_planet_input(input_planet_fname):
