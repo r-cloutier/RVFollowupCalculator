@@ -18,7 +18,7 @@ def nRV_calculator(Kdetsig,
                    input_spectrograph_fname='user_spectrograph.in',
                    input_sigRV_fname='user_sigRV.in',
                    output_fname='RVFollowupCalculator',
-                   Ntrials=1):
+                   Ntrials=1, runGP=True):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -32,6 +32,8 @@ def nRV_calculator(Kdetsig,
         (i.e. Kdetsig = K / sigmaK)
     `Ntrials' : scalar
         The number of nRV calculations to perform. Must be >= 1.
+    `runGP': boolean
+        If True, compute nRV with a GP. Significantly faster if False. 
 
     Returns
     -------
@@ -126,9 +128,10 @@ def nRV_calculator(Kdetsig,
         GPtheta = aGPs[i], Prot*lambda_factors[i], Gammas[i], Prot, \
                   sigRV_planets[i]
         keptheta = P, K
-        nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target
-                                   duration=100)
         nRVs[i] = 2. * (sigRV_effs[i] / sigK_target)**2
+        if runGP:
+            nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
+                                       sigK_target, duration=100)
 
     # compute total observing time in hours
     tobss = nRVs * (texp + toverhead) / 60.
@@ -143,8 +146,6 @@ def nRV_calculator(Kdetsig,
               sigRV_effs, sigK_target, texp, nRVs, nRVGPs, tobss, tobsGPs]
     #_write_results2file(output_fname, output)
     create_pdf(output_fname, output)
-
-    return nRV, texp, tobs
 
 
 def _read_planet_input(input_planet_fname):

@@ -64,14 +64,14 @@ def update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
     h.close()
 
 
-def run_calculator(Kdetsig, Ntrials):
-    _,_,_ = nRV_calculator(Kdetsig,
-                           input_planet_fname='user_planet.in',
-                           input_star_fname='user_star.in',
-                           input_spectrograph_fname='user_spectrograph.in',
-                           input_sigRV_fname='user_sigRV.in',
-                           output_fname='RVFCoutput',
-                           Ntrials=1)
+def run_calculator(Kdetsig, Ntrials=1, runGP=True):
+    nRV_calculator(Kdetsig,
+                   input_planet_fname='user_planet.in',`
+                   input_star_fname='user_star.in',
+                   input_spectrograph_fname='user_spectrograph.in',
+                   input_sigRV_fname='user_sigRV.in',
+                   output_fname='RVFCoutput',
+                   Ntrials=Ntrials, runGP=runGP)
 
     
 if __name__ == '__main__':
@@ -102,10 +102,11 @@ if __name__ == '__main__':
     Prot = float(sys.argv[25])
     Kdetsig = float(sys.argv[26])
     Ntrials = float(sys.argv[27])
+    runGP = int(sys.argv[28])
     
     update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
                        maxtelluric, mintexp, maxtexp, overhead, sigRVphot,
                        sigRVact, sigRVplanets, sigRVeff, P, rp, mp, mags, Ms,
                        Rs, Teff, Z, vsini, Prot):
 
-    run_calulator(Kdetsig, Ntrials)
+    run_calulator(Kdetsig, Ntrials, runGP)
