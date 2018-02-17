@@ -2,7 +2,7 @@ import os, sys
 from RVFollowupCalculator import *
 
 
-def update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
+def update_input_files(wlmin, wlmax, R, aperture, throughput, floor, wlcen, targetsnr,
                        maxtelluric, mintexp, maxtexp, overhead, sigRVphot,
                        sigRVact, sigRVplanets, sigRVeff, P, rp, mp, mags, Ms,
                        Rs, Teff, Z, vsini, Prot):
@@ -10,7 +10,8 @@ def update_input_files(bands, R, aperture, throughput, floor, wlcen, targetsnr,
     f = open('InputFiles/user_spectrograph_template.in', 'r')
     g = f.read()
     f.close()
-    g = g.replace('<<bands>>', ''.join(bands))
+    g = g.replace('<<wlmin>>', wlmin)
+    g = g.replace('<<wlmax>>', wlmax)
     g = g.replace('<<R>>', '%i'%R)
     g = g.replace('<<aperture>>', '%.2f'%aperture)
     g = g.replace('<<throughput>>', '%.2f'%throughput)

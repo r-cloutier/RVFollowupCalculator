@@ -85,14 +85,14 @@ def write_pdf_str(output_fname, magiclistofstuff2write, figures=False):
 
     # add figures if available
     if figures:
-        figstr = '\begin{figure}[h]\n\centering\n'
-        figstr += '\includegraphics[width=\hsize]{%s_sigRVs.png}\n'
+        figstr = '\\begin{figure}[h]\n\centering\n'
+        figstr += '\includegraphics[width=\hsize]{%s_sigRVs.png}\n'%output_fname
         figstr += '\caption{sigRVs}\n'
-        figstr += '\end{figure}\n\n\begin{figure}\n\centering\n'
-        figstr += '\includegraphics[width=\hsize]{%s_nRVs.png}\n'
+        figstr += '\end{figure}\n\n\\begin{figure}\n\centering\n'
+        figstr += '\includegraphics[width=\hsize]{%s_nRVs.png}\n'%output_fname
         figstr += '\caption{nRVs}\n'
-        figstr += '\end{figure}\n\n\begin{figure}\n\centering\n'
-        figstr += '\includegraphics[width=\hsize]{%s_tobs.png}\n'
+        figstr += '\end{figure}\n\n\\begin{figure}\n\centering\n'
+        figstr += '\includegraphics[width=\hsize]{%s_tobs.png}\n'%output_fname
         figstr += '\caption{tobs}\n'
         figstr += '\end{figure}\n'
 

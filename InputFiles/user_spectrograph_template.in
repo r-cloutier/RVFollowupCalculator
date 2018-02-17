@@ -1,7 +1,9 @@
 ## user_spectrograph.in
 ## The formatting of this input file is important and must remain unchanged to ensure the proper reading of the parameters contained within.
-## Spectral band labels (chosen from the list of possible values [U,B,V,R,I,Y,J,H,K])
-<<bands>>
+## Minimum wavelength of spectral domain (in nm)
+<<wlmin>>
+## Maximum wavelength of spectral domain (in nm)
+<<wlmax>>
 ## Spectral resolution (lambda / delta lambda)
 <<R>>
 ## Telescope aperture (in meters)

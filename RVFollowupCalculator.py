@@ -35,20 +35,23 @@ def nRV_calculator(Kdetsig,
     # get inputs
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
-    band_strs, R, aperture, throughput, RVnoisefloor, centralwl_nm, SNRtarget, \
-        maxtelluric, texpmin, texpmax, toverhead = \
+    wlmin, wlmax, R, aperture, throughput, RVnoisefloor, centralwl_nm, \
+        SNRtarget, maxtelluric, texpmin, texpmax, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
     sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
                                         _read_sigRV_input(input_sigRV_fname)
 
+    # get spectral bands corresponding to the wavelength range
+    band_strs = _get_spectral_bands(wlmin, wlmax)
     
     # checks
+    if mags.size != band_strs.size:
+        raise ValueError('Must have the same number of magnitudes as ' + \
+                         'bands: %s'%(''.join(band_strs)))
     if (maxtelluric < 0) or (maxtelluric >= 1):
         raise ValueError('Invalid telluric transmittance value.')
     if texpmin >= texpmax:
         raise ValueError('texpmin must be < texpmax.')
-    if mags.size != band_strs.size:
-        raise ValueError('Must have the same number of magnitudes as bands.')
     if (throughput <= 0) or (throughput >= 1):
         raise ValueError('Invalid throughput value.')
     Ntrials = int(Ntrials)
@@ -165,9 +168,9 @@ def _read_spectrograph_input(input_spectrograph_fname):
     f = open('InputFiles/%s'%input_spectrograph_fname, 'r')
     g = f.readlines()
     f.close()
-    return np.ascontiguousarray(list(g[3])[:-1]), float(g[5]), float(g[7]), \
+    return float(g[3]), float(g[5]), float(g[7]), \
         float(g[9]), float(g[11]), float(g[13]), float(g[15]), float(g[17]), \
-        float(g[19]), float(g[21]), float(g[23])
+        float(g[19]), float(g[21]), float(g[23]), float(g[25])
 
 
 def _read_sigRV_input(input_sigRV_fname):
@@ -179,6 +182,34 @@ def _read_sigRV_input(input_sigRV_fname):
     f.close()
     return float(g[3]), float(g[5]), float(g[7]), float(g[9])
 
+
+def _get_spectral_bands(wlmin, wlmax):
+    band_strs = np.array(['U','B','V','R','I','Y','J','H','K'])
+    wlcens = np.array([.3531, .4430, .5537, .694, .8781, 1.0259, 1.2545,
+                       1.631, 2.1498])
+    wlwidth = np.array([.0657, .0973, .089, .207, .2316, .1084, .1548,
+                        .2886, .3209])
+    # define boundaries
+    tolerance = .0
+    lower_bnds, upper_bnds = (wlcens - wlwidth) * (1-tolerance), \
+                            (wlcens + wlwidth) * (1+tolerance)
+    # get bands
+    bnds = np.append(np.where(abs(lower_bnds-wlmin) == \
+                              np.min(abs(lower_bnds-wlmin))),
+                     np.where(abs(upper_bnds-wlmax) == \
+                              np.min(abs(upper_bnds-wlmax))))
+    # expand if necessary
+    if (lower_bnds[bnds[0]] > wlmin) and (bnds[0] != 0):
+        bnds[0] -= 1
+    if (upper_bnds[bnds[1]] < wlmax) and (bnds[1] != band_strs.size-1):
+        bnds[1] += 1
+    inds = np.arange(bnds.min(), bnds.max()+1)
+    
+    if inds.size == 0:
+        raise ValueError('No spectral bands found.')
+
+    return band_strs[inds]
+    
 
 def _compute_logg(Ms, Rs):
     '''
