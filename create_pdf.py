@@ -47,7 +47,8 @@ def write_pdf_str(output_fname, magiclistofstuff2write, figures=False):
     f.close()
 
     # add parameters
-    g = g.replace('<<title>>', output_fname)
+    title = output_fname.replace('_', '\_')
+    g = g.replace('<<title>>', title)
     magstr = ', '.join(['%s = %.2f'%(band_strs[i], mags[i])
                         for i in range(len(mags))])
     g = g.replace('<<mags>>', magstr)
