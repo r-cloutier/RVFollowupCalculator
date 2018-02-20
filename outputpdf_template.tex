@@ -35,7 +35,7 @@
 
 \subsection{Spectrograph parameters}
 \begin{tabular}{ll}
-  Spectral resolution [$\delta \lambda / \lambda$] & <<R>> \\
+  Spectral resolution [$R = \lambda / \delta \lambda$] & <<R>> \\
   Telescope aperture [m] & <<aperture>> \\
   Throughput & <<throughput>> \\
   RV noise floor [m/s] & <<RVnoisefloor>> \\
@@ -58,7 +58,14 @@
 \pagebreak
 
 \section{Results}
-Desired $K$ detection significance = <<Kdetsig>>$\sigma$ (i.e. $\sigma_{\text{K}} =$ <<sigK_target>> m/s)
+\begin{tabular}{ll}
+  Desired $K$ detection significance & <<Kdetsig>>$\sigma$ (i.e. $\sigma_{\text{K}} =$ <<sigK_target>> m/s) \\
+  Exposure time [minutes] & <<texp>> \\
+  Median $n_{\text{RV}}$ & <<nRV>> \\
+  Median $n_{\text{RV,GP}}$ & <<nRVGP>> \\
+  Median total observing time [hours] & <<tobs>> \\
+  Median total observing time w/ GP [hours] & <<tobsGP>>
+\end{tabular}
 
 <<figures>>
 

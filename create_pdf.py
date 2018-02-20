@@ -55,7 +55,7 @@ def write_pdf_str(output_fname, magiclistofstuff2write, figures=False):
                 'R', 'aperture', 'throughput', 'RVnoisefloor',
                 'centralwl_microns', 'SNRtarget', 'transmission_threshold',
                 'texpmin', 'texpmax', 'toverhead', 'sigRV_phot', 'Kdetsig',
-                'sigK_target']
+                'sigK_target', 'texp']
     for i in range(len(fastlist)):
         if fastlist[i] in ['Teff','R']:
             fmt = '%i'
@@ -82,6 +82,12 @@ def write_pdf_str(output_fname, magiclistofstuff2write, figures=False):
             'RV rms from additional planets [m/s] & %.2f'%float(sigRV_planets))
         g = g.replace('<<sigRV_eff>>',
         'Effective RV precision [m/s] & %.2f'%float(sigRV_effs))        
+
+    # add median results
+    g = g.replace('<<nRV>>', '%.1f'%(np.median(nRVs)))
+    g = g.replace('<<nRVGP>>', '%.1f'%(np.median(nRVGPs)))
+    g = g.replace('<<tobs>>', '%.2f'%(np.median(tobss)))
+    g = g.replace('<<tobsGP>>', '%.2f'%(np.median(tobsGPs)))
 
     # add figures if available
     if figures:
