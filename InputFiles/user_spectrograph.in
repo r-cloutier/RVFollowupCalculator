@@ -15,7 +15,7 @@
 ## Central wavelength where the target signal-to-noise ratio (SNR) is specified (in nm)
 1250
 ## Target signal-to-noise ratio per resolution element
-3e2
+200
 ## Telluric absorption upper limit (in [0,1])
 2e-2
 ## Minimum exposure time (in minutes)

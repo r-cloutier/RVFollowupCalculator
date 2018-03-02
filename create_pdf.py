@@ -89,6 +89,8 @@ def write_pdf_str(output_fname, magiclistofstuff2write, figures=False):
     g = g.replace('<<nRVGP>>', '%.1f'%(np.median(nRVGPs)))
     g = g.replace('<<tobs>>', '%.2f'%(np.median(tobss)))
     g = g.replace('<<tobsGP>>', '%.2f'%(np.median(tobsGPs)))
+    g = g.replace('<<tobs_nights>>', '%.2f'%(np.median(tobss)/7.))
+    g = g.replace('<<tobsGP_nights>>', '%.2f'%(np.median(tobsGPs)/7.))
 
     # add figures if available
     if figures:
