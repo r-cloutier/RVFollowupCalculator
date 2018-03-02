@@ -16,7 +16,8 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
         # get rv activity model
         gp = george.GP(a*(george.kernels.ExpSquaredKernel(l) + \
                           george.kernels.ExpSine2Kernel(G,Pgp)))
-        t = _uniform_window_function(duration, Nrvs[i])
+        #t = _uniform_window_function(duration, Nrvs[i])
+        t = _uniform_gaps_window_function(duration, Nrvs[i], 1, 10)
         erv = np.repeat(sigRV_phot, t.size)
         gp.compute(t, np.sqrt(erv**2 + s**2))
         rv_act = gp.sample(t)
@@ -41,3 +42,17 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
 def _uniform_window_function(duration, Nrv):
     t = np.random.rand(Nrv) * duration
     return np.sort(t)
+
+
+def _uniform_gaps_window_function(duration, Nrv, Ngaps, gap_duration):
+    assert int(Ngaps) > 0
+    assert duration > Ngaps*gap_duration
+    t = np.random.rand(Nrv*50*Ngaps) * duration
+    for i in range(Ngaps):
+        tin, tout = float(duration)/(Ngaps+1)*(i+1) + \
+                    np.linspace(-gap_duration, gap_duration,2)/2.
+        t = np.delete(t, np.where((t >= tin) & (t <= tout))[0])
+    # remove excess measurements
+    inds = np.arange(t.size)
+    np.random.shuffle(inds)
+    return np.sort(t[inds][:int(Nrv)])
