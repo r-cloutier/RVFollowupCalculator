@@ -3,9 +3,9 @@
 ## Minimum wavelength of spectral domain (in nm)
 0.98
 ## Maximum wavelength of spectral domain (in nm)
-2.35
+1.7
 ## Spectral resolution (lambda / delta lambda)
-7e4
+1e5
 ## Telescope aperture (in meters)
 3.6
 ## Throughput
@@ -23,4 +23,4 @@
 ## Maximum exposure time (in minutes)
 60
 ## Assumed overhead time (in minutes)
-5
+0
