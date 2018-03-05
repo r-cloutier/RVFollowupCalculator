@@ -50,6 +50,8 @@ def nRV_calculator(Kdetsig,
         raise ValueError('Invalid telluric transmittance value.')
     if texpmin >= texpmax:
         raise ValueError('texpmin must be < texpmax.')
+    if (texp < texpmin) | (texp > texpmax):        
+        raise ValueError('texp must be in [texpmin,texpmax].')
     if (throughput <= 0) or (throughput >= 1):
         raise ValueError('Invalid throughput value.')
     
@@ -63,13 +65,12 @@ def nRV_calculator(Kdetsig,
                                              skiprows=23).T
             wlTAPAS *= 1e-3  # microns
             logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
-            sigRV_phot, texp = _compute_sigRV_phot(band_strs, mags, Teff, logg,
-                                                   Z, vsini, R, aperture,
-                                                   throughput, RVnoisefloor,
-                                                   centralwl_nm, SNRtarget,
-                                                   maxtelluric,
-                                                   texpmin, texpmax,
-                                                   wlTAPAS, transTAPAS)
+            sigRV_phot = _compute_sigRV_phot(band_strs, mags, Teff, logg,
+                                             Z, vsini, texp, R, aperture,
+                                             throughput, RVnoisefloor,
+                                             centralwl_nm, SNRtarget,
+                                             maxtelluric, texpmin, texpmax,
+                                             wlTAPAS, transTAPAS)
 
         # get RV noise sources
         Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
@@ -229,7 +230,7 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
     sigRV_phot = 1 / np.sqrt(np.sum(1. / sigmaRVs**2))
     sigRV_phot = sigRV_phot if sigRV_phot > RVnoisefloor \
                  else float(RV_noisefloor)
-    return sigRV_phot, texp
+    return sigRV_phot
 
 
 def _get_planet_mass(rps, Fs=336.5):
