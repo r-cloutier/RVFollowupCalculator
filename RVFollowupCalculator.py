@@ -28,7 +28,7 @@ def nRV_calculator(Kdetsig,
         (i.e. Kdetsig = K / sigmaK)
     `NGPtrials': scalar
         Number of times to compute Nrv with a GP as these results can vary
-        during repeated trails. Returned results are the median values (e.g. 
+        during repeated trials. Returned results are the median values (e.g. 
         median(Nrv_GP) (*recommended)
     `runGP': boolean
         If True, compute nRV with a GP. Significantly faster if False. 
@@ -110,7 +110,7 @@ def nRV_calculator(Kdetsig,
     tobsGP = nRVGP * (texp + toverhead) / 60.
     
     # write results to file
-    NGPtrials = int(Ntrials) if runGP else 0
+    NGPtrials = int(NGPtrials) if runGP else 0
     output = [P, rp, mp, K,
               mags, Ms, Rs, Teff, Z, vsini, Prot,
               band_strs, R, aperture, throughput, RVnoisefloor,
