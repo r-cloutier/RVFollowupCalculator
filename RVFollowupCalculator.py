@@ -34,7 +34,7 @@ def nRV_calculator(Kdetsig,
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
                                         _read_sigRV_input(input_sigRV_fname)
     wlmin, wlmax, R, aperture, throughput, RVnoisefloor, centralwl_nm, \
-        SNRtarget, maxtelluric, texpmin, texpmax, toverhead = \
+        SNRtarget, maxtelluric, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
@@ -48,10 +48,6 @@ def nRV_calculator(Kdetsig,
                          'bands: %s'%(''.join(band_strs)))
     if (maxtelluric < 0) or (maxtelluric >= 1):
         raise ValueError('Invalid telluric transmittance value.')
-    if texpmin >= texpmax:
-        raise ValueError('texpmin must be < texpmax.')
-    if (texp < texpmin) | (texp > texpmax):        
-        raise ValueError('texp must be in [texpmin,texpmax].')
     if (throughput <= 0) or (throughput >= 1):
         raise ValueError('Invalid throughput value.')
     
@@ -69,8 +65,7 @@ def nRV_calculator(Kdetsig,
                                              Z, vsini, texp, R, aperture,
                                              throughput, RVnoisefloor,
                                              centralwl_nm, SNRtarget,
-                                             maxtelluric, texpmin, texpmax,
-                                             wlTAPAS, transTAPAS)
+                                             maxtelluric, wlTAPAS, transTAPAS)
 
         # get RV noise sources
         Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
@@ -84,11 +79,11 @@ def nRV_calculator(Kdetsig,
         sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planet**2)
 
     # get target K measurement uncertainty
-    mp = float(_get_planet_mass(rp)) if mp == 0 else float(mp)
+    mp = float(_get_planet_mass(rp)) if mp == 0 else mp
     K, sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
     # compute number of RVs required for a white and red noise model
-    print 'Computing nRVs...' 
+    print 'Computing nRVs...'
     nRV = 2. * (sigRV_eff / sigK_target)**2
 
     if runGP:
@@ -107,15 +102,17 @@ def nRV_calculator(Kdetsig,
     tobsGP = nRVGP * (texp + toverhead) / 60.
     
     # write results to file
-    output = [P, rp, mp, rvs.RV_K(P, Ms, mp),
+    output = [P, rp, mp, K,
               mags, Ms, Rs, Teff, Z, vsini, Prot,
               band_strs, R, aperture, throughput, RVnoisefloor,
-              centralwl_nm*1e-3, SNRtarget, maxtelluric, texpmin,
-              texpmax, toverhead, sigRV_phot, sigRV_acts, sigRV_planets,
-              sigRV_effs, sigK_target, texp, nRVs, nRVGPs, tobss, tobsGPs]
+              centralwl_nm*1e-3, SNRtarget, maxtelluric, toverhead,
+              texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
+              sigK_target, nRV, nRVGP, tobs, tobsGP]
     ##_write_results2file(output_fname, output)
-    create_pdf(output_fname, output)
-
+    #create_pdf(output_fname, output)
+    _print_results(output, output_fname)
+    return output
+    
 
 def _read_planet_input(input_planet_fname):
     '''
@@ -148,7 +145,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     f.close()
     return float(g[3]), float(g[5]), float(g[7]), \
         float(g[9]), float(g[11]), float(g[13]), float(g[15]), float(g[17]), \
-        float(g[19]), float(g[21]), float(g[23]), float(g[25])
+        float(g[19]), float(g[21])
 
 
 def _read_sigRV_input(input_sigRV_fname):
@@ -199,7 +196,7 @@ def _compute_logg(Ms, Rs):
 
 def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
                         aperture, throughput, RVnoisefloor, centralwl_nm,
-                        SNRtarget, transmission_threshold, texpmin, texpmax,
+                        SNRtarget, transmission_threshold,
                         wl_telluric, trans_telluric):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
@@ -327,7 +324,11 @@ def _get_absolute_stellar_magnitudes(Ms):
 
     return Mu, Mb, Mv, Mr, Mi, MY, MJ, MH, MK 
     
-    
+
+def _scale_sigmaRV_phot(sigRV_phot, texp_old, texp_new):
+    return sigRV_phot * np.sqrt(float(texp_old) / texp_new)
+
+
 def _write_results2file(output_fname, magiclistofstuff2write):
     '''
     Write the resulting parameters to a .dat file.
@@ -359,3 +360,35 @@ def _write_results2file(output_fname, magiclistofstuff2write):
     f = open('Results/%s.dat'%output_fname, 'w')
     f.write(g)
     f.close()
+
+
+def _print_results(output, output_fname=''):
+    # get data
+    P, rp, mp, K, \
+    mags, Ms, Rs, Teff, Z, vsini, Prot, \
+    band_strs, R, aperture, throughput, RVnoisefloor, \
+    centralwl_microns, SNRtarget, maxtelluric, toverhead, \
+    texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
+    sigK_target, nRV, nRVGP, tobs, tobsGP = output
+
+    # get string to print
+    g = '\n' + '#'*50
+    g += '\n#\tPlanet parameters:\n'
+    g += '# P  = %.3f days\n# rp = %.2f REarth\n# mp = %.2f MEarth\n# K  = %.2f m/s'%(P,rp,mp,K)
+    g += '\n\n#\tStellar parameters:\n'
+    g += '# mags  = %s (%s)\n# Ms    = %.2f MSun\n# Rs    = %.2f RSun\n# Teff  = %i K\n# vsini = %.1f km/s'%(', '.join(mags.astype(str)),''.join(band_strs),Ms,Rs,Teff,vsini)
+    g += '\n\n#\tSpectrograph parameters:\n'
+    g += '# R           = %i\n# Aperture    = %.1f m\n# Throughput  = %.2f\n# Noise floor = %.2f m/s'%(R,aperture,throughput,RVnoisefloor)
+    g += '\n\n#\tRV noise parameters:\n'
+    g += '# texp               = %.1f min\n# toverhead          = %.1f min\n# sigRV_photon-noise = %.2f m/s\n# sigRV_activity     = %.2f m/s\n# sigRV_planets      = %.2f m/s\n# sigRV_eff          = %.2f m/s'%(texp,toverhead,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
+    g += '\n' + '#'*50
+    g += '\n\n#\tResults:\n'
+    g += '# Nrv  (w/o GP) = %.1f\n# tobs (w/o GP) = %.2f hours\n# tobs (w/o GP) = %.2f nights\n# Nrv  (w/ GP)  = %.1f\n# tobs (w/ GP)  = %.2f hours\n# tobs (w/ GP)  = %.2f nights'%(nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)
+    
+    print g
+    
+    # save if desired
+    if output_fname != '':
+        h = open('Results/%s.txt'%output_fname, 'w')
+        h.write(g)
+        h.close()

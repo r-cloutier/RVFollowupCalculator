@@ -18,9 +18,5 @@
 150
 ## Telluric absorption upper limit (in [0,1])
 2e-2
-## Minimum exposure time (in minutes)
-10
-## Maximum exposure time (in minutes)
-60
 ## Assumed overhead time (in minutes)
 0

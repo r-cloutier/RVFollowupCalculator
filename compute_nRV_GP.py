@@ -16,8 +16,8 @@ def compute_nRV_GP(GPtheta, keptheta, sigRV_phot, sigK_target, duration=100):
         # get rv activity model
         gp = george.GP(a*(george.kernels.ExpSquaredKernel(l) + \
                           george.kernels.ExpSine2Kernel(G,Pgp)))
-        #t = _uniform_window_function(duration, Nrvs[i])
-        t = _uniform_gaps_window_function(duration, Nrvs[i], 1, 10)
+        t = _uniform_window_function(duration, Nrvs[i])
+        #t = _uniform_gaps_window_function(duration, Nrvs[i], 1, 10)
         erv = np.repeat(sigRV_phot, t.size)
         gp.compute(t, np.sqrt(erv**2 + s**2))
         rv_act = gp.sample(t)
