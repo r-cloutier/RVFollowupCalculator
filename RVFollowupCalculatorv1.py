@@ -33,16 +33,14 @@ def nRV_calculator(Kdetsig,
 
     '''    
     # get inputs
-    sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
-                                        _read_sigRV_input(input_sigRV_fname)
-
-    
     P, rp, mp = _read_planet_input(input_planet_fname)
     mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
     wlmin, wlmax, R, aperture, throughput, RVnoisefloor, centralwl_nm, \
         SNRtarget, maxtelluric, texpmin, texpmax, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
-    
+    sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
+                                        _read_sigRV_input(input_sigRV_fname)
+
     # get spectral bands corresponding to the wavelength range
     band_strs = _get_spectral_bands(wlmin, wlmax)
     
@@ -145,7 +143,7 @@ def _read_planet_input(input_planet_fname):
     '''
     Read-in planetary data from the input file.
     '''
-    f = open('InputFiles/%s'%input_planet_fname, 'r')
+    f = open('InputFilesv1/%s'%input_planet_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[3]), float(g[5]), float(g[7])
@@ -155,7 +153,7 @@ def _read_star_input(input_star_fname):
     '''
     Read-in stellar data from the input file.
     '''
-    f = open('InputFiles/%s'%input_star_fname, 'r')
+    f = open('InputFilesv1/%s'%input_star_fname, 'r')
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(g[3].split(',')).astype(float), \
@@ -167,7 +165,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     '''
     Read-in spectrograph data from the input file.
     '''
-    f = open('InputFiles/%s'%input_spectrograph_fname, 'r')
+    f = open('InputFilesv1/%s'%input_spectrograph_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[3]), float(g[5]), float(g[7]), \
@@ -179,7 +177,7 @@ def _read_sigRV_input(input_sigRV_fname):
     '''
     Read-in RV noise source data from the input file.
     '''
-    f = open('InputFiles/%s'%input_sigRV_fname, 'r')
+    f = open('InputFilesv1/%s'%input_sigRV_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[3]), float(g[5]), float(g[7]), float(g[9])
