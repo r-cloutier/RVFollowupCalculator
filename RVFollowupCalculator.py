@@ -14,7 +14,7 @@ def nRV_calculator(Kdetsig,
                    input_spectrograph_fname='user_spectrograph.in',
                    input_sigRV_fname='user_sigRV.in',
                    output_fname='RVFollowupCalculator',
-                   NGPtrials=1, runGP=True, verbose_results=True):
+                   duration=100, NGPtrials=1, runGP=True, verbose_results=True):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -26,6 +26,9 @@ def nRV_calculator(Kdetsig,
         The desired RV semi-amplitude detection significance measured as 
         the semi-amplitude over its measurement uncertainty 
         (i.e. Kdetsig = K / sigmaK)
+    `duration': scalar
+        Duration (in days) of the assumed uniform time-series for calculations 
+        of nRV with a GP. 
     `NGPtrials': scalar
         Number of times to compute Nrv with a GP as these results can vary
         during repeated trials. Returned results are the median values (e.g. 
@@ -54,6 +57,9 @@ def nRV_calculator(Kdetsig,
         raise ValueError('Invalid telluric transmittance value.')
     if (throughput <= 0) or (throughput >= 1):
         raise ValueError('Invalid throughput value.')
+    if runGP and (duration < P):
+        raise ValueError('Time-series duration must be longer than the' + \
+                         "planet's orbital period.")
     
     # compute sigRV_eff from other sources if not specified
     if sigRV_eff < 0:
@@ -94,12 +100,12 @@ def nRV_calculator(Kdetsig,
         nRVGPs = np.zeros(NGPtrials)
         for i in range(NGPtrials):
             aGP = sigRV_act if sigRV_act != 0 else sigRV_eff
-            lambda_factor = 3 + np.random.randn() * .1
+            lambdaGP = Prot * (3 + np.random.randn() * .1)
             GammaGP = 2 + np.random.randn() * .1
-            GPtheta = aGP, Prot*lambda_factor, GammaGP, Prot, sigRV_planet
+            GPtheta = aGP, lambdaGP, GammaGP, Prot, sigRV_planet
             keptheta = P, K
             nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
-                                       sigK_target, duration=100)
+                                       sigK_target, duration=duration)
             print nRVGPs[i]
         nRVGP = np.median(nRVGPs)
     else:
