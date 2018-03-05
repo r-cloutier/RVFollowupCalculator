@@ -14,7 +14,7 @@ def nRV_calculator(Kdetsig,
                    input_spectrograph_fname='user_spectrograph.in',
                    input_sigRV_fname='user_sigRV.in',
                    output_fname='RVFollowupCalculator',
-                   runGP=True):
+                   NGPtrials=1, runGP=True, verbose_results=True):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -26,6 +26,10 @@ def nRV_calculator(Kdetsig,
         The desired RV semi-amplitude detection significance measured as 
         the semi-amplitude over its measurement uncertainty 
         (i.e. Kdetsig = K / sigmaK)
+    `NGPtrials': scalar
+        Number of times to compute Nrv with a GP as these results can vary
+        during repeated trails. Returned results are the median values (e.g. 
+        median(Nrv_GP) (*recommended)
     `runGP': boolean
         If True, compute nRV with a GP. Significantly faster if False. 
 
@@ -87,13 +91,17 @@ def nRV_calculator(Kdetsig,
     nRV = 2. * (sigRV_eff / sigK_target)**2
 
     if runGP:
-        aGP = sigRV_act if sigRV_act != 0 else sigRV_eff
-        lambda_factor = 3 + np.random.randn() * .1
-        GammaGP = 2 + np.random.randn() * .1
-        GPtheta = aGP, Prot*lambda_factor, GammaGP, Prot, sigRV_planet
-        keptheta = P, K
-        nRVGP = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
-                               sigK_target, duration=100)
+        nRVGPs = np.zeros(NGPtrials)
+        for i in range(NGPtrials):
+            aGP = sigRV_act if sigRV_act != 0 else sigRV_eff
+            lambda_factor = 3 + np.random.randn() * .1
+            GammaGP = 2 + np.random.randn() * .1
+            GPtheta = aGP, Prot*lambda_factor, GammaGP, Prot, sigRV_planet
+            keptheta = P, K
+            nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
+                                       sigK_target, duration=100)
+            print nRVGPs[i]
+        nRVGP = np.median(nRVGPs)
     else:
         nRVGP = 0.
         
@@ -102,15 +110,17 @@ def nRV_calculator(Kdetsig,
     tobsGP = nRVGP * (texp + toverhead) / 60.
     
     # write results to file
+    NGPtrials = int(Ntrials) if runGP else 0
     output = [P, rp, mp, K,
               mags, Ms, Rs, Teff, Z, vsini, Prot,
               band_strs, R, aperture, throughput, RVnoisefloor,
               centralwl_nm*1e-3, SNRtarget, maxtelluric, toverhead,
               texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
-              sigK_target, nRV, nRVGP, tobs, tobsGP]
+              sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP]
     ##_write_results2file(output_fname, output)
     #create_pdf(output_fname, output)
-    _print_results(output, output_fname)
+    if verbose_results:
+        _print_results(output, output_fname)
     return output
     
 
@@ -369,7 +379,7 @@ def _print_results(output, output_fname=''):
     band_strs, R, aperture, throughput, RVnoisefloor, \
     centralwl_microns, SNRtarget, maxtelluric, toverhead, \
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
-    sigK_target, nRV, nRVGP, tobs, tobsGP = output
+    sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
 
     # get string to print
     g = '\n' + '#'*50
@@ -380,10 +390,10 @@ def _print_results(output, output_fname=''):
     g += '\n\n#\tSpectrograph parameters:\n'
     g += '# R           = %i\n# Aperture    = %.1f m\n# Throughput  = %.2f\n# Noise floor = %.2f m/s'%(R,aperture,throughput,RVnoisefloor)
     g += '\n\n#\tRV noise parameters:\n'
-    g += '# texp               = %.1f min\n# toverhead          = %.1f min\n# sigRV_photon-noise = %.2f m/s\n# sigRV_activity     = %.2f m/s\n# sigRV_planets      = %.2f m/s\n# sigRV_eff          = %.2f m/s'%(texp,toverhead,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
+    g += '# texp           = %.1f min\n# toverhead      = %.1f min\n# sigRV_photon   = %.2f m/s\n# sigRV_activity = %.2f m/s\n# sigRV_planets  = %.2f m/s\n# sigRV_eff      = %.2f m/s'%(texp,toverhead,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
     g += '\n' + '#'*50
-    g += '\n\n#\tResults:\n'
-    g += '# Nrv  (w/o GP) = %.1f\n# tobs (w/o GP) = %.2f hours\n# tobs (w/o GP) = %.2f nights\n# Nrv  (w/ GP)  = %.1f\n# tobs (w/ GP)  = %.2f hours\n# tobs (w/ GP)  = %.2f nights'%(nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)
+    g += '\n\n#\tResults:  (NGPtrials = %i)\n'%NGPtrials
+    g += '# Nrv     = %.1f\n# tobs    = %.2f hours\n# tobs    = %.2f nights\n# Nrv_GP  = %.1f\n# tobs_GP = %.2f hours\n# tobs_GP = %.2f nights\n'%(nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)
     
     print g
     
