@@ -398,7 +398,7 @@ def _print_results(output, output_fname=''):
     g += '\n\n#\tRV noise parameters:\n'
     g += '# texp           = %.1f min\n# toverhead      = %.1f min\n# sigRV_photon   = %.2f m/s\n# sigRV_activity = %.2f m/s\n# sigRV_planets  = %.2f m/s\n# sigRV_eff      = %.2f m/s'%(texp,toverhead,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
     g += '\n' + '#'*50
-    g += '\n\n#\tResults:  (NGPtrials = %i)\n'%NGPtrials
+    g += '\n\n#\tResults: (%.1f sigma K detection, NGPtrials = %i)\n'%(K/sigK_target, NGPtrials)
     g += '# Nrv     = %.1f\n# tobs    = %.2f hours\n# tobs    = %.2f nights\n# Nrv_GP  = %.1f\n# tobs_GP = %.2f hours\n# tobs_GP = %.2f nights\n'%(nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)
     
     print g
