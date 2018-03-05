@@ -136,7 +136,7 @@ def _compute_sigmaRV_planets(Ks):
 
 
 # rvs.is_Lagrangestable(Ps, Ms, mps, eccs)
-def get_sigmaRV_planets(P, rp, Teff, Ms, mult, sigmaRV_phot):
+def get_sigmaRV_planets(P, rp, Teff, Ms, sigmaRV_phot):
     '''
     Compute the RV rms due to additional planets with P > TESS planet P. 
     Additional planets are drawn from the known planet occurrences rates. 
@@ -145,10 +145,12 @@ def get_sigmaRV_planets(P, rp, Teff, Ms, mult, sigmaRV_phot):
     '''
     # FGK star
     if Teff > 3800:
-        _,_,_,Ks = draw_FGK_planets(P, rp, int(mult), Ms)
+        mult = 1.1 * np.random.randn() * 0.1
+        _,_,_,Ks = draw_FGK_planets(P, rp, int(np.round(mult)), Ms)
     # M dwarf
     else:
-        _,_,_,Ks = draw_M_planets(P, rp, int(mult), Ms)    
+        mult = 2.5 + np.random.randn() * 0.2 
+        _,_,_,Ks = draw_M_planets(P, rp, int(np.round(mult)), Ms)
 
     # only include undetected planets with K < sigmaRV_phot
     Ks = Ks[Ks < sigmaRV_phot]

@@ -14,7 +14,7 @@ def nRV_calculator(Kdetsig,
                    input_spectrograph_fname='user_spectrograph.in',
                    input_sigRV_fname='user_sigRV.in',
                    output_fname='RVFollowupCalculator',
-                   Ntrials=1, runGP=True):
+                   runGP=True):
     '''
     Compute the number of RV measurements required to detect an input 
     transiting planet around an input star with an input spectrograph at a 
@@ -26,22 +26,18 @@ def nRV_calculator(Kdetsig,
         The desired RV semi-amplitude detection significance measured as 
         the semi-amplitude over its measurement uncertainty 
         (i.e. Kdetsig = K / sigmaK)
-    `Ntrials' : scalar
-        The number of nRV calculations to perform. Must be >= 1.
     `runGP': boolean
         If True, compute nRV with a GP. Significantly faster if False. 
 
     '''    
     # get inputs
-    sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
+    texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
                                         _read_sigRV_input(input_sigRV_fname)
-
-    
-    P, rp, mp = _read_planet_input(input_planet_fname)
-    mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
     wlmin, wlmax, R, aperture, throughput, RVnoisefloor, centralwl_nm, \
         SNRtarget, maxtelluric, texpmin, texpmax, toverhead = \
                             _read_spectrograph_input(input_spectrograph_fname)
+    P, rp, mp = _read_planet_input(input_planet_fname)
+    mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
     
     # get spectral bands corresponding to the wavelength range
     band_strs = _get_spectral_bands(wlmin, wlmax)
@@ -56,24 +52,11 @@ def nRV_calculator(Kdetsig,
         raise ValueError('texpmin must be < texpmax.')
     if (throughput <= 0) or (throughput >= 1):
         raise ValueError('Invalid throughput value.')
-    Ntrials = int(Ntrials)
-    assert Ntrials > 0
     
-    texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
-                                             throughput, R, SNRtarget,
-                                             texpmin, texpmax)
-
-    # compute RV noise source if sigRV_eff is not set
-    if sigRV_eff > 0:
-        sigRV_effs = np.repeat(sigRV_eff, Ntrials)
-        sigRV_phots, sigRV_acts, sigRV_planets = np.zeros(Ntrials), \
-                                                 np.zeros(Ntrials), \
-                                                 np.zeros(Ntrials)
-
-    # compute sigRV_eff from other sources
-    else:
+    # compute sigRV_eff from other sources if not specified
+    if sigRV_eff < 0:
         
-        # compute sigRV_phot once
+        # compute sigRV_phot once if needed
         if sigRV_phot <= 0:
             transmission_fname = 'tapas_000001.ipac'
             wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname,
@@ -91,18 +74,13 @@ def nRV_calculator(Kdetsig,
         # get RV noise sources
         Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
         B_V = Bmag - Vmag
-        sigRV_acts = np.repeat(sigRV_act, Ntrials) if sigRV_act >= 0 \
-                     else np.array([get_sigmaRV_activity(Teff, Ms, Prot, B_V)
-                                    for i in range(Ntrials)])
-        sigRV_planets = np.repeat(sigRV_planet, Ntrials) if sigRV_planet >= 0 \
-                        else np.array([get_sigmaRV_planets(P, rp, Teff, Ms,
-                                                           mult, sigRV_phot)
-                                       for i in range(Ntrials)])
+        if sigRV_act < 0:
+            sigRV_act = get_sigmaRV_activity(Teff, Ms, Prot, B_V)
+        if sigRV_planet < 0:
+            sigRV_planet = get_sigmaRV_planets(P,rp,Teff,Ms,sigRV_phot)
 
         # compute sigRV_eff
-        sigRV_phots = np.repeat(sigRV_phot, Ntrials)
-        sigRV_effs = np.sqrt(sigRV_phots**2 + sigRV_acts**2 + sigRV_planets**2)
-
+        sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planet**2)
 
     # get target K measurement uncertainty
     mp = float(_get_planet_mass(rp)) if mp == 0 else float(mp)
@@ -110,25 +88,22 @@ def nRV_calculator(Kdetsig,
 
     # compute number of RVs required for a white and red noise model
     print 'Computing nRVs...' 
-    nRVs, nRVGPs = np.zeros(Ntrials), np.zeros(Ntrials)
-    aGPs = sigRV_acts if np.any(sigRV_acts != 0) else sigRV_effs
-    lambda_factors = 3 + np.random.randn(Ntrials) * .1
-    Gammas = 2 + np.random.randn(Ntrials) * .1
-    t0 = time.time()
-    for i in range(Ntrials):
-        lambda_factor = np.random.randn()
-        GPtheta = aGPs[i], Prot*lambda_factors[i], Gammas[i], Prot, \
-                  sigRV_planets[i]
-        keptheta = P, K
-        nRVs[i] = 2. * (sigRV_effs[i] / sigK_target)**2
-        if runGP:
-            nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
-                                       sigK_target, duration=100)
+    nRV = 2. * (sigRV_eff / sigK_target)**2
 
+    if runGP:
+        aGP = sigRV_act if sigRV_act != 0 else sigRV_eff
+        lambda_factor = 3 + np.random.randn() * .1
+        GammaGP = 2 + np.random.randn() * .1
+        GPtheta = aGP, Prot*lambda_factor, GammaGP, Prot, sigRV_planet
+        keptheta = P, K
+        nRVGP = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
+                               sigK_target, duration=100)
+    else:
+        nRVGP = 0.
+        
     # compute total observing time in hours
-    tobss = nRVs * (texp + toverhead) / 60.
-    tobsGPs = nRVGPs * (texp + toverhead) / 60.
-    print '%i trials took %.3f minutes.'%(Ntrials, (time.time()-t0)/60.)
+    tobs = nRV * (texp + toverhead) / 60.
+    tobsGP = nRVGP * (texp + toverhead) / 60.
     
     # write results to file
     output = [P, rp, mp, rvs.RV_K(P, Ms, mp),
@@ -182,7 +157,7 @@ def _read_sigRV_input(input_sigRV_fname):
     f = open('InputFiles/%s'%input_sigRV_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[3]), float(g[5]), float(g[7]), float(g[9])
+    return float(g[3]), float(g[5]), float(g[7]), float(g[9]), float(g[11])
 
 
 def _get_spectral_bands(wlmin, wlmax):
@@ -221,10 +196,10 @@ def _compute_logg(Ms, Rs):
     return unp.log10(G * Ms / Rs**2 * 1e2)
 
 
-def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
-                        throughput, RVnoisefloor, centralwl_nm, SNRtarget,
-                        transmission_threshold, texpmin, texpmax, wl_telluric,
-                        trans_telluric):
+def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
+                        aperture, throughput, RVnoisefloor, centralwl_nm,
+                        SNRtarget, transmission_threshold, texpmin, texpmax,
+                        wl_telluric, trans_telluric):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
     full spectral domain.
@@ -236,11 +211,6 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, R, aperture,
     logg_round = loggs[abs(loggs-logg) == np.min(abs(loggs-logg))][0]
     Zs = np.append(np.arange(-4,-1,dtype=float), np.arange(-1.5,1.5,.5))
     Z_round = Zs[abs(Zs-Z) == np.min(abs(Zs-Z))][0]
-
-    # get exposure time
-    texp = exposure_time_calculator_per_band(mags, band_strs, aperture,
-                                             throughput, R, SNRtarget,
-                                             texpmin=texpmin, texpmax=texpmax)
     
     # compute sigmaRV in each band for a fixed texp
     sigmaRVs = np.zeros(mags.size)
