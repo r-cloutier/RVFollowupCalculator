@@ -410,7 +410,7 @@ def _print_results(output, output_fname=''):
         h.close()
 
 
-def _save_results(output, output_fname=''):
+def _save_results(output):
     # get data
     P, rp, mp, K, \
     mags, Ms, Rs, Teff, Z, vsini, Prot, \
@@ -419,9 +419,19 @@ def _save_results(output, output_fname=''):
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
     sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
 
-    tocsv = ''
-    for i in range(len(output)):
-	
-	try:
-	    _ = output[i].size
-	    
+    # save mags to csv file first
+    tocsv = np.zeros(9, dtype='str')
+    all_band_strs = np.array(['U','B','V','R','I','Y','J','H','K'])
+    tocsv[np.in1d(all_band_strs, band_strs)] = mags
+    tocsv = ','.join(tocsv.astype(str))
+
+    # add remaining parameters
+    tocsv = tocsv + ',' + ','.join(np.array(output[:4]).astype(str))
+    tocsv = tocsv + ',' + ','.join(np.array(output[5:11]).astype(str))
+    tocsv = tocsv + ',' + ','.join(np.array(output[12:]).astype(str))
+
+    # save to csv file for uploading into the RVFC for repeated calculations
+    fname = ('%.6f_%.6f'%(time.time(), np.random.rand())).replace('.','d') + '.csv'
+    f = open(fname, 'w')
+    f.write(tocsv)
+    f.close()
