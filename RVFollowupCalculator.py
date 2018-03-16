@@ -403,8 +403,25 @@ def _print_results(output, output_fname=''):
     
     print g
     
-    # save if desired
+    # save text file if desired
     if output_fname != '':
         h = open('Results/%s.txt'%output_fname, 'w')
         h.write(g)
         h.close()
+
+
+def _save_results(output, output_fname=''):
+    # get data
+    P, rp, mp, K, \
+    mags, Ms, Rs, Teff, Z, vsini, Prot, \
+    band_strs, R, aperture, throughput, RVnoisefloor, \
+    centralwl_microns, SNRtarget, maxtelluric, toverhead, \
+    texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
+    sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
+
+    tocsv = ''
+    for i in range(len(output)):
+	
+	try:
+	    _ = output[i].size
+	    
