@@ -9,10 +9,10 @@ global G
 G = 6.67e-11
 
 def nRV_calculator(Kdetsig,
-                   input_planet_fname='user_planet.in',
-                   input_star_fname='user_star.in',
-                   input_spectrograph_fname='user_spectrograph.in',
-                   input_sigRV_fname='user_sigRV.in',
+                   input_planet_fname='InputFiles/user_planet.in',
+                   input_star_fname='InputFiles/user_star.in',
+                   input_spectrograph_fname='InputFiles/user_spectrograph.in',
+                   input_sigRV_fname='InputFiles/user_sigRV.in',
                    output_fname='RVFollowupCalculator',
                    duration=100, NGPtrials=1, runGP=True, verbose_results=True):
     '''
@@ -134,7 +134,7 @@ def _read_planet_input(input_planet_fname):
     '''
     Read-in planetary data from the input file.
     '''
-    f = open('InputFiles/%s'%input_planet_fname, 'r')
+    f = open('%s'%input_planet_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[3]), float(g[5]), float(g[7])
@@ -144,7 +144,7 @@ def _read_star_input(input_star_fname):
     '''
     Read-in stellar data from the input file.
     '''
-    f = open('InputFiles/%s'%input_star_fname, 'r')
+    f = open('%s'%input_star_fname, 'r')
     g = f.readlines()
     f.close()
     return np.ascontiguousarray(g[3].split(',')).astype(float), \
@@ -156,7 +156,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     '''
     Read-in spectrograph data from the input file.
     '''
-    f = open('InputFiles/%s'%input_spectrograph_fname, 'r')
+    f = open('%s'%input_spectrograph_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[3]), float(g[5]), float(g[7]), \
@@ -168,7 +168,7 @@ def _read_sigRV_input(input_sigRV_fname):
     '''
     Read-in RV noise source data from the input file.
     '''
-    f = open('InputFiles/%s'%input_sigRV_fname, 'r')
+    f = open('%s'%input_sigRV_fname, 'r')
     g = f.readlines()
     f.close()
     return float(g[3]), float(g[5]), float(g[7]), float(g[9]), float(g[11])
