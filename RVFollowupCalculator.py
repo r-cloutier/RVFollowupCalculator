@@ -40,11 +40,18 @@ def nRV_calculator(Kdetsig,
     # get inputs
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
                                         _read_sigRV_input(input_sigRV_fname)
-    wlmin, wlmax, R, aperture, throughput, RVnoisefloor, centralwl_nm, \
-        SNRtarget, maxtelluric, toverhead = \
-                            _read_spectrograph_input(input_spectrograph_fname)
+    wlmin, wlmax, R, aperture, throughput, RVnoisefloor, maxtelluric,\
+        toverhead = _read_spectrograph_input(input_spectrograph_fname)
     P, rp, mp = _read_planet_input(input_planet_fname)
-    mags, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
+    mag, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
+
+    # get central band
+    if (wlmin <= .555 <= wlmax):
+        centralwl_nm = 555
+    elif (wlmin <= 1.250 <= wlmax):
+        centralwl_nm = 1250
+    else:
+        raise ValueError('Spectral coverage does not include the V or J-band.')
     
     # get spectral bands corresponding to the wavelength range
     band_strs = _get_spectral_bands(wlmin, wlmax)
@@ -74,8 +81,8 @@ def nRV_calculator(Kdetsig,
             sigRV_phot = _compute_sigRV_phot(band_strs, mags, Teff, logg,
                                              Z, vsini, texp, R, aperture,
                                              throughput, RVnoisefloor,
-                                             centralwl_nm, SNRtarget,
-                                             maxtelluric, wlTAPAS, transTAPAS)
+                                             centralwl_nm, maxtelluric,
+                                             wlTAPAS, transTAPAS)
 
         # get RV noise sources
         Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
@@ -120,7 +127,7 @@ def nRV_calculator(Kdetsig,
     output = [P, rp, mp, K,
               mags, Ms, Rs, Teff, Z, vsini, Prot,
               band_strs, R, aperture, throughput, RVnoisefloor,
-              centralwl_nm*1e-3, SNRtarget, maxtelluric, toverhead,
+              centralwl_nm*1e-3, maxtelluric, toverhead,
               texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
               sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP]
     ##_write_results2file(output_fname, output)
@@ -147,9 +154,8 @@ def _read_star_input(input_star_fname):
     f = open('%s'%input_star_fname, 'r')
     g = f.readlines()
     f.close()
-    return np.ascontiguousarray(g[3].split(',')).astype(float), \
-        float(g[5]), float(g[7]), float(g[9]), float(g[11]), float(g[13]), \
-        float(g[15])
+    return float(g[3]), float(g[5]), float(g[7]), float(g[9]), \
+        float(g[11]), float(g[13]), float(g[15])
 
 
 def _read_spectrograph_input(input_spectrograph_fname):
@@ -159,9 +165,9 @@ def _read_spectrograph_input(input_spectrograph_fname):
     f = open('%s'%input_spectrograph_fname, 'r')
     g = f.readlines()
     f.close()
-    return float(g[3]), float(g[5]), float(g[7]), \
+    return float(g[3])*1e-3, float(g[5])*1e-3, float(g[7]), \
         float(g[9]), float(g[11]), float(g[13]), float(g[15]), float(g[17]), \
-        float(g[19]), float(g[21])
+        float(g[19])
 
 
 def _read_sigRV_input(input_sigRV_fname):
@@ -212,8 +218,7 @@ def _compute_logg(Ms, Rs):
 
 def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
                         aperture, throughput, RVnoisefloor, centralwl_nm,
-                        SNRtarget, transmission_threshold,
-                        wl_telluric, trans_telluric):
+                        transmission_threshold, wl_telluric, trans_telluric):
     '''
     Calculate the photon-noise limited RV precision over the spectrograph's 
     full spectral domain.
@@ -230,6 +235,7 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
     sigmaRVs = np.zeros(mags.size)
     for i in range(sigmaRVs.size):
         t0 = time.time()
+        SNRtarget = get_snr(mags[i], band_strs[i], texp, aperture, throughput, R)
         wl, spec = get_reduced_spectrum(Teff_round, logg_round, Z_round, vsini,
                                         band_strs[i], R, centralwl_nm*1e-3,
                                         SNRtarget)
@@ -353,7 +359,7 @@ def _write_results2file(output_fname, magiclistofstuff2write):
     maglabels = ''
     for i in range(magiclistofstuff2write[3].size):
         maglabels += '%s magnitude\n'%magiclistofstuff2write[9][i]
-    hdr = 'Orbital period (days)\nPlanetary radius (Earth radii)\nPlanetary mass(Earth masses)\nRV semi-amplitude(m/s)\n%sStellar mass (Solar masses)\nStellar Radius (Solar radii)\nEffective temperature (K)\n[Fe/H] (Solar units)\nProjected rotation velocity (km/s)\nRotation period (days)\nSpectral resolution\nAperture (meters)\nThroughput\nRV noise floor (m/s)\nReference wavelength (microns)\nTarget SNR\nMaximum fractional telluric absorption\nMinimum exposure time (minutes)\nMaximum exposure time (minutes)\nOverhead (minutes)\nPhoton noise limited RV (m/s)\nRV activity rms (m/s)\nAdditional planet RV rms (m/s)\nEffective RV rms (m/s)\nTarget K measurement uncertainty (m/s)\nExposure time (minutes)\nNumber of RV measurements\nNumber of RV measurements with GP\nTotal observing time (hours)\nTotal observing time with GP (hours)'%maglabels
+    hdr = 'Orbital period (days)\nPlanetary radius (Earth radii)\nPlanetary mass(Earth masses)\nRV semi-amplitude(m/s)\n%sStellar mass (Solar masses)\nStellar Radius (Solar radii)\nEffective temperature (K)\n[Fe/H] (Solar units)\nProjected rotation velocity (km/s)\nRotation period (days)\nSpectral resolution\nAperture (meters)\nThroughput\nRV noise floor (m/s)\nReference wavelength (microns)\nMaximum fractional telluric absorption\nMinimum exposure time (minutes)\nMaximum exposure time (minutes)\nOverhead (minutes)\nPhoton noise limited RV (m/s)\nRV activity rms (m/s)\nAdditional planet RV rms (m/s)\nEffective RV rms (m/s)\nTarget K measurement uncertainty (m/s)\nExposure time (minutes)\nNumber of RV measurements\nNumber of RV measurements with GP\nTotal observing time (hours)\nTotal observing time with GP (hours)'%maglabels
     hdr, hdrv2 = hdr.split('\n'), ''
     for i in range(len(hdr)):
         hdrv2 += '# %i: %s\n'%(i, hdr[i])
@@ -383,7 +389,7 @@ def _print_results(output, output_fname=''):
     P, rp, mp, K, \
     mags, Ms, Rs, Teff, Z, vsini, Prot, \
     band_strs, R, aperture, throughput, RVnoisefloor, \
-    centralwl_microns, SNRtarget, maxtelluric, toverhead, \
+    centralwl_microns, maxtelluric, toverhead, \
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
     sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
 
@@ -415,7 +421,7 @@ def _save_results(output):
     P, rp, mp, K, \
     mags, Ms, Rs, Teff, Z, vsini, Prot, \
     band_strs, R, aperture, throughput, RVnoisefloor, \
-    centralwl_microns, SNRtarget, maxtelluric, toverhead, \
+    centralwl_microns, maxtelluric, toverhead, \
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
     sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
 

@@ -1,7 +1,7 @@
 ## user_star.in
 ## The formatting of this input file is important and must remain unchanged to ensure the proper reading of the parameters contained within.
-## Stellar magnitudes as comma-separated values. Must have the same number of entries as spectral band labels in user_spectrograph.in
-9.3,8.968,8.501,8.375
+## Stellar magnitude in either V or J band. The spectral coverage of the spectrograph will dictate which one.
+8.968
 ## Stellar mass (in Solar masses)
 0.80
 ## Stellar radius (in Solar radii)

@@ -357,11 +357,11 @@ def _rescale_sigmaRV(sigmaRV, mag, band_str, texp_min, aperture, throughput, R,
         The rescaled SNR of the spectrum
 
     '''
-    snr = _get_snr(mag, band_str, texp_min, aperture, throughput, R)
+    snr = get_snr(mag, band_str, texp_min, aperture, throughput, R)
     return sigmaRV * SNRtarget / snr
     
 
-def _get_snr(mag, band_str, texp_min, aperture, throughput, R):
+def get_snr(mag, band_str, texp_min, aperture, throughput, R):
     '''
     Compute the SNR of the spectrum in a certain band (e.g. 'J').
 
@@ -494,8 +494,8 @@ def exposure_time_calculator_per_band(mags, band_strs, aperture, throughput, R,
     texps = np.arange(texpmin, texpmax+.1, .1)  # minutes
     SNRs = np.zeros(texps.size)
     for i in range(texps.size):
-        SNRs[i] = _get_snr(reference_mag, reference_band, texps[i],
-                           aperture, throughput, R)
+        SNRs[i] = get_snr(reference_mag, reference_band, texps[i],
+                          aperture, throughput, R)
 
     if SNRs.min() > SNRtarget:
         return float(texpmin)
