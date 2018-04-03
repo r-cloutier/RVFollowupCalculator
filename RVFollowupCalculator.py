@@ -4,6 +4,7 @@ from sigmaRV_activity import *
 from sigmaRV_planets import *
 from compute_nRV_GP import *
 from create_pdf import *
+from Teff2color import *
 
 global G
 G = 6.67e-11
@@ -46,15 +47,23 @@ def nRV_calculator(Kdetsig,
     mag, Ms, Rs, Teff, Z, vsini, Prot = _read_star_input(input_star_fname)
 
     # get central band
+    Vcen, Jcen = False, False
     if (wlmin <= .555 <= wlmax):
         centralwl_nm = 555
+        Vcen = True
     elif (wlmin <= 1.250 <= wlmax):
         centralwl_nm = 1250
+        Jcen = True
     else:
         raise ValueError('Spectral coverage does not include the V or J-band.')
     
     # get spectral bands corresponding to the wavelength range
     band_strs = _get_spectral_bands(wlmin, wlmax)
+
+    # get mags for each spectral bin based on reference magnitude and Teff
+    mags = V2all(mag, Teff) if Vcen else J2all(mag, Teff)
+    all_band_strs = np.array(['U','B','V','R','I','Y','J','H','K'])
+    mags = mags[np.in1d(all_band_strs, band_strs)]
     
     # checks
     if mags.size != band_strs.size:

@@ -109,6 +109,13 @@ def V2K(Vmag, Teff):
     Kmag = Vmag - V_K
     return Kmag
 
+def J2V(Jmag, Teff):
+    V_Js = np.linspace(-.12, 4.24, 100)
+    fint = interp1d(VJ2Teff(V_Js), V_Js)
+    V_J = fint(Teff)
+    Vmag = V_J + Jmag
+    return Vmag    
+
 def J2H(Jmag, Teff):
     R_Js = np.linspace(.09, 2.58, 100)
     fint = interp1d(RJ2Teff(R_Js), R_Js)
@@ -130,3 +137,28 @@ def J2K(Jmag, Teff):
     R_K = fint(Teff)
     Kmag = Rmag - R_K
     return Kmag
+
+
+def V2all(Vmag, Teff):
+    # return all magnitudes
+    Umag = np.nan
+    Bmag = V2B(Vmag, Teff)
+    Rmag = V2R(Vmag, Teff)
+    Imag = V2I(Vmag, Teff)
+    Jmag = V2J(Vmag, Teff)
+    Hmag = V2H(Vmag, Teff)
+    Kmag = V2K(Vmag, Teff)
+    Ymag = np.nan #np.mean([Imag,Jmag])
+    return Umag, Bmag, Vmag, Rmag, Imag, Ymag, Jmag, Hmag, Kmag
+
+def J2all(Jmag, Teff):
+    # return all magnitudes
+    Umag = np.nan
+    Bmag = V2B(J2V(Jmag, Teff), Teff)
+    Vmag = J2V(Jmag, Teff)
+    Rmag = V2R(Vmag, Teff)
+    Imag = V2I(Vmag, Teff)
+    Ymag = np.nan
+    Hmag = J2H(Jmag, Teff)
+    Kmag = J2K(Jmag, Teff)
+    return Umag, Bmag, Vmag, Rmag, Imag, Ymag, Jmag, Hmag, Kmag
