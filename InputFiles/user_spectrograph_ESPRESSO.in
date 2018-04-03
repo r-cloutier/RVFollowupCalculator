@@ -1,0 +1,22 @@
+## user_spectrograph.in
+## The formatting of this input file is important and must remain unchanged to ensure the proper reading of the parameters contained within.
+## Minimum wavelength of spectral domain (in microns)
+.38
+## Maximum wavelength of spectral domain (in microns)
+.68
+## Spectral resolution (lambda / delta lambda)
+14e4
+## Telescope aperture (in meters)
+8.2
+## Throughput
+0.1
+## RV noise floor (in m/s)
+1.
+## Central wavelength where the target signal-to-noise ratio (SNR) is specified (in nm)
+555
+## Target signal-to-noise ratio per resolution element
+150
+## Telluric absorption upper limit (in [0,1])
+2e-2
+## Assumed overhead time (in minutes)
+0

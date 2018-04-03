@@ -242,7 +242,7 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
     # compute sigmaRV over all bands
     sigRV_phot = 1 / np.sqrt(np.sum(1. / sigmaRVs**2))
     sigRV_phot = sigRV_phot if sigRV_phot > RVnoisefloor \
-                 else float(RV_noisefloor)
+                 else float(RVnoisefloor)
     return sigRV_phot
 
 
