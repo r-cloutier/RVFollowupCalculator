@@ -61,7 +61,7 @@ def nRV_calculator(Kdetsig,
     band_strs = _get_spectral_bands(wlmin, wlmax)
 
     # get mags for each spectral bin based on reference magnitude and Teff
-    mags = V2all(mag, Teff) if Vcen else J2all(mag, Teff)
+    mags = V2all(mag, Teff, Z) if Vcen else J2all(mag, Teff, Z)
     all_band_strs = np.array(['U','B','V','R','I','Y','J','H','K'])
     mags = mags[np.in1d(all_band_strs, band_strs)]
     
