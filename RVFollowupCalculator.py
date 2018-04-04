@@ -61,9 +61,13 @@ def nRV_calculator(Kdetsig,
     band_strs = _get_spectral_bands(wlmin, wlmax)
 
     # get mags for each spectral bin based on reference magnitude and Teff
-    mags = V2all(mag, Teff, Z) if Vcen else J2all(mag, Teff, Z)
+    logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
+    mags = V2all(mag, Teff, logg, Z) if Vcen else J2all(mag, Teff, logg, Z)
     all_band_strs = np.array(['U','B','V','R','I','Y','J','H','K'])
     mags = mags[np.in1d(all_band_strs, band_strs)]
+    g = np.isnan(mags)
+    if g.sum() > 0:
+        mags[g] = float(.5 * (mags[np.where(g)[0]-1] + mags[np.where(g)[0]+1]))
     
     # checks
     if mags.size != band_strs.size:
@@ -86,7 +90,6 @@ def nRV_calculator(Kdetsig,
             wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname,
                                              skiprows=23).T
             wlTAPAS *= 1e-3  # microns
-            logg = float(unp.nominal_values(_compute_logg(Ms, Rs)))
             sigRV_phot = _compute_sigRV_phot(band_strs, mags, Teff, logg,
                                              Z, vsini, texp, R, aperture,
                                              throughput, RVnoisefloor,
@@ -175,8 +178,7 @@ def _read_spectrograph_input(input_spectrograph_fname):
     g = f.readlines()
     f.close()
     return float(g[3])*1e-3, float(g[5])*1e-3, float(g[7]), \
-        float(g[9]), float(g[11]), float(g[13]), float(g[15]), float(g[17]), \
-        float(g[19])
+        float(g[9]), float(g[11]), float(g[13]), float(g[15]), float(g[17])
 
 
 def _read_sigRV_input(input_sigRV_fname):

@@ -15,8 +15,9 @@ def isolate_logg_FeH(logg, FeH):
 
 
 # MAGNITUDE CONVERSIONS
+Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
+
 def _V2U(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], U_Bs[g])
     assert 2e3 <= Teff <= 1e4
@@ -26,7 +27,6 @@ def _V2U(Vmag, Teff, logg, FeH):
     return Umag
 
 def _V2B(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], B_Vs[g])
     assert 2e3 <= Teff <= 1e4
@@ -36,7 +36,6 @@ def _V2B(Vmag, Teff, logg, FeH):
     return Bmag
 
 def _V2R(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Rs[g])
     assert 2e3 <= Teff <= 1e4
@@ -45,7 +44,6 @@ def _V2R(Vmag, Teff, logg, FeH):
     return Rmag
 
 def _V2I(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Is[g])
     assert 2e3 <= Teff <= 1e4
@@ -54,7 +52,6 @@ def _V2I(Vmag, Teff, logg, FeH):
     return Imag
 
 def _V2J(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], J_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -64,7 +61,6 @@ def _V2J(Vmag, Teff, logg, FeH):
     return Jmag
 
 def _V2H(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], J_Hs[g])
     assert 2e3 <= Teff <= 1e4
@@ -74,7 +70,6 @@ def _V2H(Vmag, Teff, logg, FeH):
     return Hmag
 
 def _V2K(Vmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -83,7 +78,6 @@ def _V2K(Vmag, Teff, logg, FeH):
     return Kmag
 
 def _J2U(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -94,7 +88,6 @@ def _J2U(Jmag, Teff, logg, FeH):
     return Umag
 
 def _J2B(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -105,7 +98,6 @@ def _J2B(Jmag, Teff, logg, FeH):
     return Bmag
 
 def _J2V(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -115,7 +107,6 @@ def _J2V(Jmag, Teff, logg, FeH):
     return Vmag
 
 def _J2R(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -126,7 +117,6 @@ def _J2R(Jmag, Teff, logg, FeH):
     return Rmag
 
 def _J2I(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], V_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -137,7 +127,6 @@ def _J2I(Jmag, Teff, logg, FeH):
     return Imag
 
 def _J2H(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], J_Hs[g])
     assert 2e3 <= Teff <= 1e4
@@ -146,7 +135,6 @@ def _J2H(Jmag, Teff, logg, FeH):
     return Hmag
 
 def _J2K(Jmag, Teff, logg, FeH):
-    Teffs,loggs,FeHs,U_Bs,B_Vs,V_Rs,V_Is,V_Ks,R_Is,J_Hs,H_Ks,J_Ks = get_data()
     g = isolate_logg_FeH(logg, FeH)
     fint = interp1d(Teffs[g], J_Ks[g])
     assert 2e3 <= Teff <= 1e4
@@ -165,7 +153,7 @@ def V2all(Vmag, Teff, logg, FeH):
     Jmag = _V2J(Vmag, Teff, logg, FeH)
     Hmag = _V2H(Vmag, Teff, logg, FeH)
     Kmag = _V2K(Vmag, Teff, logg, FeH)
-    return Umag, Bmag, Vmag, Rmag, Imag, Ymag, Jmag, Hmag, Kmag
+    return np.array([Umag, Bmag, Vmag, Rmag, Imag, Ymag, Jmag, Hmag, Kmag])
 
 def J2all(Jmag, Teff, logg, FeH):
     Jmag = float(Jmag)
@@ -177,4 +165,4 @@ def J2all(Jmag, Teff, logg, FeH):
     Ymag = np.nan
     Hmag = _J2H(Jmag, Teff, logg, FeH)
     Kmag = _J2K(Jmag, Teff, logg, FeH)
-    return Umag, Bmag, Vmag, Rmag, Imag, Ymag, Jmag, Hmag, Kmag
+    return np.array([Umag, Bmag, Vmag, Rmag, Imag, Ymag, Jmag, Hmag, Kmag])
