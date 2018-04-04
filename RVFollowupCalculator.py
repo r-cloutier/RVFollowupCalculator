@@ -105,7 +105,10 @@ def nRV_calculator(Kdetsig,
             sigRV_planet = get_sigmaRV_planets(P,rp,Teff,Ms,sigRV_phot)
 
         # compute sigRV_eff
-        sigRV_eff = np.sqrt(sigRV_phot**2 + sigRV_act**2 + sigRV_planet**2)
+        sigRV_eff = np.sqrt(RVnoisefloor**2 + \
+                            sigRV_phot**2 + \
+                            sigRV_act**2 + \
+                            sigRV_planet**2)
 
     # get target K measurement uncertainty
     mp = float(_get_planet_mass(rp)) if mp == 0 else mp
@@ -416,7 +419,7 @@ def _print_results(output, output_fname=''):
     g += '\n\n#\tSpectrograph parameters:\n'
     g += '# R           = %i\n# Aperture    = %.1f m\n# Throughput  = %.2f\n# Noise floor = %.2f m/s'%(R,aperture,throughput,RVnoisefloor)
     g += '\n\n#\tRV noise parameters:\n'
-    g += '# texp           = %.1f min\n# toverhead      = %.1f min\n# SNRtarget     = %.1f \n# sigRV_photon   = %.2f m/s\n# sigRV_activity = %.2f m/s\n# sigRV_planets  = %.2f m/s\n# sigRV_eff      = %.2f m/s'%(texp,toverhead,SNRtarget,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
+    g += '# texp           = %.1f min\n# toverhead      = %.1f min\n# SNRtarget      = %.1f \n# sigRV_photon   = %.2f m/s\n# sigRV_activity = %.2f m/s\n# sigRV_planets  = %.2f m/s\n# sigRV_eff      = %.2f m/s'%(texp,toverhead,SNRtarget,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
     g += '\n' + '#'*50
     g += '\n\n#\tResults:  (NGPtrials = %i)\n'%NGPtrials
     g += '# Desired sigK = %.2f m/s  (%.1f sigma K detection)\n# Nrv          = %.1f\n# tobs         = %.2f hours\n# tobs         = %.2f nights\n# Nrv_GP       = %.1f\n# tobs_GP      = %.2f hours\n# tobs_GP      = %.2f nights\n'%(sigK_target,K/sigK_target,nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)

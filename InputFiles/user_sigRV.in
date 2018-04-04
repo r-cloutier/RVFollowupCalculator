@@ -3,10 +3,10 @@
 ## Exposure time (in minutes)
 20.
 ## Photon-noise limited RV measurement precision (in m/s). If set to zero, then it is computed from a model stellar spectrum 
-1
+0
 ## RV activity rms (in m/s). Set to a negative value to sample its value rather than specifying it
-0
+1
 ## RV rms from additional planets (in m/s). Set to a negative value to sample its value rather than specifying it
-0
+.5
 ## Effective RV rms (in m/s). Set to a non-zero value to be used verbatim rather than being calculated from the photon-noise limited RV rms, activity, and additional planet contributions
 -1
