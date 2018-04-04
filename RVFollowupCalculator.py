@@ -95,7 +95,7 @@ def nRV_calculator(Kdetsig,
                                                         throughput, RVnoisefloor,
                                                         centralwl_nm, maxtelluric,
                                                         wlTAPAS, transTAPAS)
-
+            
         # get RV noise sources
         Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
         B_V = Bmag - Vmag
@@ -132,7 +132,13 @@ def nRV_calculator(Kdetsig,
     # compute total observing time in hours
     tobs = nRV * (texp + toverhead) / 60.
     tobsGP = nRVGP * (texp + toverhead) / 60.
-    
+
+    # is SNRtarget set?
+    try:
+        _ = SNRtarget
+    except NameError:
+        SNRtarget = np.nan
+        
     # write results to file
     NGPtrials = int(NGPtrials) if runGP else 0
     output = [P, rp, mp, K,
@@ -399,7 +405,7 @@ def _write_results2file(output_fname, magiclistofstuff2write):
 
 def _print_results(output, output_fname=''):
     # get data
-    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, maxtelluric, toverhead, texp, SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = ouput
+    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, maxtelluric, toverhead, texp, SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
     
     # get string to print
     g = '\n' + '#'*50
