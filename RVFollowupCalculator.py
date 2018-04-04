@@ -399,13 +399,8 @@ def _write_results2file(output_fname, magiclistofstuff2write):
 
 def _print_results(output, output_fname=''):
     # get data
-    P, rp, mp, K, \
-    mags, Ms, Rs, Teff, Z, vsini, Prot, \
-    band_strs, R, aperture, throughput, RVnoisefloor, \
-    centralwl_microns, maxtelluric, toverhead, texp,
-    SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
-    sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
-
+    P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, maxtelluric, toverhead, texp, SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = ouput
+    
     # get string to print
     g = '\n' + '#'*50
     g += '\n#\tPlanet parameters:\n'
