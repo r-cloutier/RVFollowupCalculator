@@ -90,11 +90,11 @@ def nRV_calculator(Kdetsig,
             wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname,
                                              skiprows=23).T
             wlTAPAS *= 1e-3  # microns
-            sigRV_phot = _compute_sigRV_phot(band_strs, mags, Teff, logg,
-                                             Z, vsini, texp, R, aperture,
-                                             throughput, RVnoisefloor,
-                                             centralwl_nm, maxtelluric,
-                                             wlTAPAS, transTAPAS)
+            SNRtarget, sigRV_phot = _compute_sigRV_phot(band_strs, mags, Teff, logg,
+                                                        Z, vsini, texp, R, aperture,
+                                                        throughput, RVnoisefloor,
+                                                        centralwl_nm, maxtelluric,
+                                                        wlTAPAS, transTAPAS)
 
         # get RV noise sources
         Bmag, Vmag = _get_magnitudes(band_strs, mags, Ms)
@@ -125,7 +125,6 @@ def nRV_calculator(Kdetsig,
             keptheta = P, K
             nRVGPs[i] = compute_nRV_GP(GPtheta, keptheta, sigRV_phot,
                                        sigK_target, duration=duration)
-            print nRVGPs[i]
         nRVGP = np.median(nRVGPs)
     else:
         nRVGP = 0.
@@ -139,11 +138,11 @@ def nRV_calculator(Kdetsig,
     output = [P, rp, mp, K,
               mags, Ms, Rs, Teff, Z, vsini, Prot,
               band_strs, R, aperture, throughput, RVnoisefloor,
-              centralwl_nm*1e-3, maxtelluric, toverhead,
-              texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
+              centralwl_nm*1e-3, maxtelluric, toverhead, texp,
+              SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
               sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP]
     ##_write_results2file(output_fname, output)
-    #create_pdf(output_fname, output)
+    ##create_pdf(output_fname, output)
     if verbose_results:
         _print_results(output, output_fname)
     return output
@@ -243,24 +242,27 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
     Z_round = Zs[abs(Zs-Z) == np.min(abs(Zs-Z))][0]
     
     # compute sigmaRV in each band for a fixed texp
-    sigmaRVs = np.zeros(mags.size)
+    sigmaRVs, SNRtargets = np.zeros(mags.size), np.zeros(mags.size)
     for i in range(sigmaRVs.size):
         t0 = time.time()
-        SNRtarget = get_snr(mags[i], band_strs[i], texp, aperture, throughput, R)
+        SNRtargets[i] = get_snr(mags[i], band_strs[i], texp, aperture, throughput, R)
         wl, spec = get_reduced_spectrum(Teff_round, logg_round, Z_round, vsini,
                                         band_strs[i], R, centralwl_nm*1e-3,
-                                        SNRtarget)
+                                        SNRtargets[i])
         sigmaRVs[i] = compute_sigmaRV(wl, spec, mags[i], band_strs[i], texp,
                                       aperture, throughput, R,
                                       transmission_threshold, wl_telluric,
-                                      trans_telluric, SNRtarget)
+                                      trans_telluric, SNRtargets[i])
         print 'Took %.1f seconds\n'%(time.time()-t0)
-        
+
+    # compute SNRtarget
+    SNRtarget = SNRtargets.mean()
+
     # compute sigmaRV over all bands
     sigRV_phot = 1 / np.sqrt(np.sum(1. / sigmaRVs**2))
     sigRV_phot = sigRV_phot if sigRV_phot > RVnoisefloor \
                  else float(RVnoisefloor)
-    return sigRV_phot
+    return SNRtarget, sigRV_phot
 
 
 def _get_planet_mass(rps, Fs=336.5):
@@ -400,8 +402,8 @@ def _print_results(output, output_fname=''):
     P, rp, mp, K, \
     mags, Ms, Rs, Teff, Z, vsini, Prot, \
     band_strs, R, aperture, throughput, RVnoisefloor, \
-    centralwl_microns, maxtelluric, toverhead, \
-    texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
+    centralwl_microns, maxtelluric, toverhead, texp,
+    SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, \
     sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
 
     # get string to print
@@ -413,7 +415,7 @@ def _print_results(output, output_fname=''):
     g += '\n\n#\tSpectrograph parameters:\n'
     g += '# R           = %i\n# Aperture    = %.1f m\n# Throughput  = %.2f\n# Noise floor = %.2f m/s'%(R,aperture,throughput,RVnoisefloor)
     g += '\n\n#\tRV noise parameters:\n'
-    g += '# texp           = %.1f min\n# toverhead      = %.1f min\n# sigRV_photon   = %.2f m/s\n# sigRV_activity = %.2f m/s\n# sigRV_planets  = %.2f m/s\n# sigRV_eff      = %.2f m/s'%(texp,toverhead,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
+    g += '# texp           = %.1f min\n# toverhead      = %.1f min\n# SNRtarget     = %.1f \n# sigRV_photon   = %.2f m/s\n# sigRV_activity = %.2f m/s\n# sigRV_planets  = %.2f m/s\n# sigRV_eff      = %.2f m/s'%(texp,toverhead,SNRtarget,sigRV_phot,sigRV_act,sigRV_planet,sigRV_eff)
     g += '\n' + '#'*50
     g += '\n\n#\tResults:  (NGPtrials = %i)\n'%NGPtrials
     g += '# Desired sigK = %.2f m/s  (%.1f sigma K detection)\n# Nrv          = %.1f\n# tobs         = %.2f hours\n# tobs         = %.2f nights\n# Nrv_GP       = %.1f\n# tobs_GP      = %.2f hours\n# tobs_GP      = %.2f nights\n'%(sigK_target,K/sigK_target,nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)
