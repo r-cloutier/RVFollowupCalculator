@@ -67,7 +67,7 @@ def planet_contrast(rp_Rearth, SMA_AU, albedo=.3):
 
 def get_baraffe_Ls(Ms, age=2):
     # Get Baraffe data
-    baraffe = np.loadtxt('input_data/BCAH98.dat')
+    baraffe = np.loadtxt('InputData/BCAH98.dat')
     barmass = baraffe[:,0]    # Msun
     barage = baraffe[:,1]     # Gyrs
     barTeff = baraffe[:,2]    # K

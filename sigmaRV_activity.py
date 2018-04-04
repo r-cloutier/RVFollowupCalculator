@@ -42,7 +42,7 @@ def _get_F8(Teff):
     Get F8 values from Bastien+2013 after isolating dwarfs based on their 
     Xcrossing value describing the complexity of the light curve.
     '''
-    Teffs, F8, R, Z = np.loadtxt('input_data/nature12419-s2.txt',
+    Teffs, F8, R, Z = np.loadtxt('InputData/nature12419-s2.txt',
                                 usecols=(2,3,4,5)).T
     g = np.log10(Z) <= 1.85
     Teffs, F8 = Teffs[g], F8[g]
@@ -70,9 +70,9 @@ def _get_logRhk_OLD(Prot, Ms):
         
     # FGK star
     else:
-        lRhk1, Prot1 = np.loadtxt('input_data/Lovisetal2011_withoutBcycle.dat',
+        lRhk1, Prot1 = np.loadtxt('InputData/Lovisetal2011_withoutBcycle.dat',
                                   usecols=(4,9)).T
-        lRhk2, Prot2 = np.loadtxt('input_data/Lovisetal2011_withBcycle.dat',
+        lRhk2, Prot2 = np.loadtxt('InputData/Lovisetal2011_withBcycle.dat',
                                   usecols=(4,9)).T
         logRhks, Prots = np.append(lRhk1, lRhk2), np.append(Prot1, Prot2)
         # boundary conditions
@@ -207,7 +207,7 @@ def get_prot_kepler(Teff, seed=None):
         The star's sampled rotation period in days
 
     '''
-    Teffs, Prots = np.loadtxt('input_data/asu.tsv', skiprows=37).T
+    Teffs, Prots = np.loadtxt('InputData/asu.tsv', skiprows=37).T
     # Isolate range of effective temperatures
     dT = 1e2
     if Teff > Teffs.max():
@@ -228,7 +228,7 @@ def draw_prot_empirical(Ms):
     Pizzolato+2003 (FGK) or Newton+2016 (M dwarfs).
     '''
     if Ms > .6:
-        B_Vs, Prots, Mss = np.loadtxt('input_data/PizzolatoData.tsv',
+        B_Vs, Prots, Mss = np.loadtxt('InputData/PizzolatoData.tsv',
                                       skiprows=35).T
     else:
         Prots, Mss, As, _ = read_newtondata()
@@ -277,7 +277,7 @@ def draw_age():
     Get age from the stellar age distribution of exoplanet hosting Solar-type 
     stars from Silva-Aguirre et al 2015.
     '''
-    ages, eages = np.loadtxt('input_data/ExoplanetHostStarAges.tsv',
+    ages, eages = np.loadtxt('InputData/ExoplanetHostStarAges.tsv',
                              skiprows=37).T
     ind = np.random.choice(np.arange(ages.size))
     return (ages[ind] + np.random.randn() * eages[ind]) * 1e3  # in Myr
@@ -288,7 +288,7 @@ def read_newtondata():
     Read the M dwarf rotation periods, masses, and photmetric variability 
     amplitudes into numpy arrays.
     '''
-    data = ascii.read('input_data/newton16.txt')
+    data = ascii.read('InputData/newton16.txt')
     nstars = data['P'].size
     Prots = np.zeros(0)
     Mss = np.zeros(0)
