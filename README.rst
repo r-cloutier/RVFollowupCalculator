@@ -30,21 +30,20 @@ Citation
 
 If you use this code please cite the following paper::
 
-@ARTICLE{2018AJ....156...82C,
-       author = {{Cloutier}, Ryan and {Doyon}, Ren{\'e} and {Bouchy}, Francois and
-        {H{\'e}brard}, Guillaume},
-        title = "{Quantifying the Observational Effort Required for the Radial Velocity Characterization of TESS Planets}",
-      journal = {\aj},
-     keywords = {methods: analytical, planets and satellites: detection, planets and satellites: fundamental parameters, techniques: radial velocities, Astrophysics - Earth and Planetary Astrophysics},
-         year = 2018,
-        month = Aug,
-       volume = {156},
-          eid = {82},
-        pages = {82},
-          doi = {10.3847/1538-3881/aacea9},
-archivePrefix = {arXiv},
-       eprint = {1807.01263},
- primaryClass = {astro-ph.EP},
-       adsurl = {https://ui.adsabs.harvard.edu/\#abs/2018AJ....156...82C},
-      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+  @ARTICLE{2018AJ....156...82C,
+  author = {{Cloutier}, Ryan and {Doyon}, Ren{\'e} and {Bouchy}, Francois and {H{\'e}brard}, Guillaume},
+  title = "{Quantifying the Observational Effort Required for the Radial Velocity Characterization of TESS Planets}",
+  journal = {\aj},
+  keywords = {methods: analytical, planets and satellites: detection, planets and satellites: fundamental parameters, techniques: radial velocities, Astrophysics - Earth and Planetary Astrophysics},
+  year = 2018,
+  month = Aug,
+  volume = {156},
+  eid = {82},
+  pages = {82},
+  doi = {10.3847/1538-3881/aacea9},
+  archivePrefix = {arXiv},
+  eprint = {1807.01263},
+  primaryClass = {astro-ph.EP},
+  adsurl = {https://ui.adsabs.harvard.edu/\#abs/2018AJ....156...82C},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
