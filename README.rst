@@ -17,7 +17,7 @@ Begin by cloning this repository and navigating to its base directory via::
 	git clone https://github.com/r-cloutier/RVFollowupCalculator.git
 	cd RVFollowupCalculator
 
-Because of the numerous parameters required to run calculations with the RVFC, its basic usage is best demostrated with an example given in this `ipython notebook <https://github.com/r-cloutier/RVFollowupCalculator/blob/master/example_nRV_calculation.ipynb>`_ which can be opened in its interactive mode via::
+Because of the numerous parameters required to run calculations with the RVFC (i.e. planetary, stellar, spectrograph, RV noise sources), its basic usage is best demonstrated with an example given in this `ipython notebook <https://github.com/r-cloutier/RVFollowupCalculator/blob/master/example_nRV_calculation.ipynb>`_ which can be opened in its interactive mode via::
 
 	jupyter notebook example_nRV_calculation.ipynb
 
