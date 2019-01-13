@@ -46,4 +46,4 @@ If you use this code please cite the following paper::
   primaryClass = {astro-ph.EP},
   adsurl = {https://ui.adsabs.harvard.edu/\#abs/2018AJ....156...82C},
   adsnote = {Provided by the SAO/NASA Astrophysics Data System}
-}
+  }
