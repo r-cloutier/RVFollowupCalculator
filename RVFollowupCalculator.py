@@ -3,7 +3,7 @@ from compute_sigmaRV import *
 from sigmaRV_activity import *
 from sigmaRV_planets import *
 from compute_nRV_GP import *
-from create_pdf import *
+#from create_pdf import *
 from Teff2color import *
 
 global G
@@ -37,7 +37,7 @@ def nRV_calculator(Kdetsig,
     `runGP': boolean
         If True, compute nRV with a GP. Significantly faster if False. 
 
-    '''    
+    ''' 
     # get inputs
     texp, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff = \
                                         _read_sigRV_input(input_sigRV_fname)
@@ -86,6 +86,7 @@ def nRV_calculator(Kdetsig,
         
         # compute sigRV_phot once if needed
         if sigRV_phot <= 0:
+	    print 'Computing the photon-noise limited RV precision...\n'
             transmission_fname = 'tapas_000001.ipac'
             wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname,
                                              skiprows=23).T
@@ -144,17 +145,18 @@ def nRV_calculator(Kdetsig,
         
     # write results to file
     NGPtrials = int(NGPtrials) if runGP else 0
-    output = [P, rp, mp, K,
-              mags, Ms, Rs, Teff, Z, vsini, Prot,
-              band_strs, R, aperture, throughput, RVnoisefloor,
-              centralwl_nm*1e-3, maxtelluric, toverhead, texp,
-              SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
-              sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP]
+    output_arr = [P, rp, mp, K,
+                  mags, Ms, Rs, Teff, Z, vsini, Prot,
+                  band_strs, R, aperture, throughput, RVnoisefloor,
+                  centralwl_nm*1e-3, maxtelluric, toverhead, texp,
+                  SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff,
+                  sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP]
+    self = RVFC(output_fname, output_arr)
     ##_write_results2file(output_fname, output)
     ##create_pdf(output_fname, output)
     if verbose_results:
-        _print_results(output, output_fname)
-    return output
+        _print_results(output_arr)
+    return self
     
 
 def _read_planet_input(input_planet_fname):
@@ -409,7 +411,8 @@ def _write_results2file(output_fname, magiclistofstuff2write):
 def _print_results(output, output_fname=''):
     # get data
     P, rp, mp, K, mags, Ms, Rs, Teff, Z, vsini, Prot, band_strs, R, aperture, throughput, RVnoisefloor, centralwl_microns, maxtelluric, toverhead, texp, SNRtarget, sigRV_phot, sigRV_act, sigRV_planet, sigRV_eff, sigK_target, nRV, nRVGP, NGPtrials, tobs, tobsGP = output
-    
+    mags = np.array(['%.3f'%m for m in mags])
+
     # get string to print
     g = '\n' + '#'*50
     g += '\n#\tPlanet parameters:\n'
@@ -458,3 +461,32 @@ def _save_results(output):
     f = open(fname, 'w')
     f.write(tocsv)
     f.close()
+    
+
+
+class RVFC:
+
+    def __init__(self, output_fname, params):
+        self.output_fname = output_fname
+        assert len(params) == 31
+        self.P, self.rp, self.mp, self.K = params[:4]
+        self.mags, self.band_strs = params[4], params[11]
+        self.Ms, self.Rs, self.Teff, self.Z, self.vsini, self.Prot = params[5:11]
+        self.R, self.aperture, self.throughput, self.RVfloor, self.wl_cen, self.maxtelluric = params[12:18]
+        self.toverhead, self.texp = np.array(params[18:20])*60  # min -> sec 
+        self.sigRV_phot, self.sigRV_act, self.sigRV_planets, self.sigRV_eff = params[21:25]
+        self.sigK_target, self.nRV, self.nRVGP, self.NGtrials, self.tobs, self.tobsGP = params[25:]        
+        self._pickleobject()
+        
+    def _pickleobject(self):
+        fObj = open(self.output_fname, 'wb')
+        pickle.dump(self, fObj)
+        fObj.close()
+        
+
+
+def loadpickle(fname):
+    fObj = open(fname, 'rb')
+    self = pickle.load(fObj)
+    fObj.close()
+    return self

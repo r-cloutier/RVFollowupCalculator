@@ -532,7 +532,7 @@ def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold,
     '''
     assert wl_band.size == W.size
     print 'Masking %s band telluric regions where '%band_str + \
-        'transmission > %.2f percent'%(1. - transmission_threshold)
+        'transmittance < %.2f percent'%(1. - transmission_threshold)
     
     # remove rayleigh continuum via boxcar smoothing if passband is in
     # that regime

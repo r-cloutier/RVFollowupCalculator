@@ -102,7 +102,7 @@ def setup_sigRV(prefix, texp_sec, sigphot=None, sigact=None, sigplanets=None,
     g = g.replace('<<sigact>>', '%.3f'%sigact)
     sigplanets = float(sigplanets) if sigplanets != None else -1.
     g = g.replace('<<sigplanets>>', '%.3f'%sigplanets)
-    sigeff = float(sigeff) if sigeff != None else 0.
+    sigeff = float(sigeff) if sigeff != None else -1.
     g = g.replace('<<sigeff>>', '%.3f'%sigeff)
 
     # write new file
