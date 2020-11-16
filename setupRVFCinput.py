@@ -118,4 +118,4 @@ def clean_files(prefix):
     '''Remove the input files created by any of the above functions.'''
     fs = glob.glob('%s/%s_*in'%(basedir, prefix))
     for f in fs:
-	os.system('rm %s'%f)
+        os.system('rm %s'%f)

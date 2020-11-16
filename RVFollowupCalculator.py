@@ -3,7 +3,6 @@ from compute_sigmaRV import *
 from sigmaRV_activity import *
 from sigmaRV_planets import *
 from compute_nRV_GP import *
-#from create_pdf import *
 from Teff2color import *
 
 global G
@@ -86,7 +85,7 @@ def nRV_calculator(Kdetsig,
         
         # compute sigRV_phot once if needed
         if sigRV_phot <= 0:
-	    print 'Computing the photon-noise limited RV precision...\n'
+            print('Computing the photon-noise limited RV precision...\n')
             transmission_fname = 'tapas_000001.ipac'
             wlTAPAS, transTAPAS = np.loadtxt('/Users/ryancloutier/Research/RVInformation/RVFollowupCalculator/InputData/%s'%transmission_fname,
                                              skiprows=23).T
@@ -116,7 +115,7 @@ def nRV_calculator(Kdetsig,
     K, sigK_target = _get_sigK(Kdetsig, P, Ms, mp)
 
     # compute number of RVs required for a white and red noise model
-    print 'Computing nRVs...'
+    print('Computing nRVs...')
     nRV = 2. * (sigRV_eff / sigK_target)**2
 
     if runGP:
@@ -264,7 +263,7 @@ def _compute_sigRV_phot(band_strs, mags, Teff, logg, Z, vsini, texp, R,
                                       aperture, throughput, R,
                                       transmission_threshold, wl_telluric,
                                       trans_telluric, SNRtargets[i])
-        print 'Took %.1f seconds\n'%(time.time()-t0)
+        print('Took %.1f seconds\n'%(time.time()-t0))
 
     # compute SNRtarget
     SNRtarget = SNRtargets.mean()
@@ -354,7 +353,7 @@ def _get_absolute_stellar_magnitudes(Ms):
                                           Mis[g],Mjs[g],Mhs[g],Mks[g]
     g = abs(Mss-Ms) == np.min(abs(Mss-Ms))
     if g.sum() > 1:
-	g = np.where(g)[0][0]
+        g = np.where(g)[0][0]
     Mu,Mb,Mv,Mr,Mi,Mj,Mh,Mk = Mus[g],Mbs[g],Mvs[g],Mrs[g],Mis[g],Mjs[g], \
                               Mhs[g],Mks[g]
     # Second set of isochrones (ZYJHK)
@@ -365,7 +364,7 @@ def _get_absolute_stellar_magnitudes(Ms):
     Mss2,MZs,MYs,MJs,MHs,MKs = Mss2[g],MZs[g],MYs[g],MJs[g],MHs[g],MKs[g]
     g = abs(Mss2-Ms) == np.min(abs(Mss2-Ms))
     if g.sum() > 1:
-	g = np.where(g)[0][0]
+        g = np.where(g)[0][0]
     MZ,MY,MJ,MH,MK = MZs[g],MYs[g],MJs[g],MHs[g],MKs[g]    
 
     return Mu, Mb, Mv, Mr, Mi, MY, MJ, MH, MK 
@@ -427,7 +426,7 @@ def _print_results(output, output_fname=''):
     g += '\n\n#\tResults:  (NGPtrials = %i)\n'%NGPtrials
     g += '# Desired sigK = %.2f m/s  (%.1f sigma K detection)\n# Nrv          = %.1f\n# tobs         = %.2f hours\n# tobs         = %.2f nights\n# Nrv_GP       = %.1f\n# tobs_GP      = %.2f hours\n# tobs_GP      = %.2f nights\n'%(sigK_target,K/sigK_target,nRV,tobs,tobs/7.,nRVGP,tobsGP,tobsGP/7.)
     
-    print g
+    print(g)
     
     # save text file if desired
     if output_fname != '':

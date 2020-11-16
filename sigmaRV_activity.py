@@ -49,11 +49,11 @@ def _get_F8(Teff):
 
     # draw a value of F8
     if Teff < Teffs.min():
-	g = np.argsort(Teffs)[:10]
+        g = np.argsort(Teffs)[:10]
     elif Teff > Teffs.max():
-	g = np.argsort(Teffs)[-10::]
+        g = np.argsort(Teffs)[-10::]
     else:
-    	g = (Teffs <= Teff*1.1) & (Teffs >= Teff*.9)
+        g = (Teffs <= Teff*1.1) & (Teffs >= Teff*.9)
     return np.random.choice(F8[g]) + np.random.rand() * 2e-2
 
 
@@ -268,7 +268,7 @@ def get_prot_gyrochronology(Teff, B_V):
     # Meibom et al 2006 (good up to 2.5 Gyrs)
     f = .77*(B_V-.47)**(.55) if B_V >= .47 else 0.
     t_Myr = draw_age()
-    print t_Myr
+    print(t_Myr)
     return np.sqrt(t_Myr) * f
 
 

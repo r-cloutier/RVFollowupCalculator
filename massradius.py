@@ -68,7 +68,7 @@ def MR_FeMgSiO3_curves(cmf):
     CMFs = np.arange(0,1.025,.025)
     thiscmf = CMFs == cmf
     if not np.any(thiscmf):
-	raise ValueError('Do not have this CMF. Try somthing in range(0, 1.025, .025).')
+        raise ValueError('Do not have this CMF. Try somthing in range(0, 1.025, .025).')
     return mp[:,thiscmf], rp[:,thiscmf]
 
 

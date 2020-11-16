@@ -100,11 +100,11 @@ def _get_full_spectrum(Teff, logg, Z):
     Zs = np.append(np.arange(-4,-2,1), np.arange(-2,1.5,.5))
     assert Z in Zs
     if Z == 0:
-	Zstr = '-0.0'
+        Zstr = '-0.0'
     elif Z > 0:
-	Zstr = '+%.1f'%Z
+        Zstr = '+%.1f'%Z
     else:
-	Zstr = '%.1f'%Z
+        Zstr = '%.1f'%Z
 
     # Download the spectrum
     prefix = "ftp://phoenix.astro.physik.uni-goettingen.de/HiResFITS/" + \
@@ -157,8 +157,8 @@ def _convolve_band_spectrum(wl_microns, spectrum, band_str, R):
     # Convolve to instrument resolution
     FWHM_microns = wl_central_microns / float(R)
     sigma_microns = FWHM_microns / (2*np.sqrt(2*np.log(2)))
-    print 'Convolving the %s band stellar spectrum to the '%band_str + \
-        'instrumental resolution (R = %i)'%R
+    print('Convolving the %s band stellar spectrum to the '%band_str + \
+        'instrumental resolution (R = %i)'%R)
     try:
         spectrum_conv = broadGaussFast(wl_band, spectrum_band, sigma_microns)
     except NameError: # no convolution is bad
@@ -531,22 +531,22 @@ def _remove_tellurics_from_W(band_str, wl_band, W, transmission_threshold,
 
     '''
     assert wl_band.size == W.size
-    print 'Masking %s band telluric regions where '%band_str + \
-        'transmittance < %.2f percent'%(1. - transmission_threshold)
+    print('Masking %s band telluric regions where '%band_str + \
+          'transmittance < %.2f percent'%(1. - transmission_threshold))
     
     # remove rayleigh continuum via boxcar smoothing if passband is in
     # that regime
     if np.any(wl_band <=.8):
         boxsteps = np.arange(wl_telluric.min(), wl_telluric.max(), 1e-2)
         trans_telluric_continuum = np.zeros(boxsteps.size-1)
-    	for i in range(boxsteps.size-1):
-	    trans_telluric_continuum[i] = \
+        for i in range(boxsteps.size-1):
+            trans_telluric_continuum[i] = \
                     trans_telluric[(wl_telluric >= boxsteps[i]) \
                                    & (wl_telluric <= boxsteps[i+1])].max()
-	fint = interp1d(boxsteps[1:]-np.diff(boxsteps)[0]*.5,
+        fint = interp1d(boxsteps[1:]-np.diff(boxsteps)[0]*.5,
                         trans_telluric_continuum,
                         bounds_error=False, fill_value=.878)
-	trans_telluric = trans_telluric - fint(wl_telluric) + 1.
+        trans_telluric = trans_telluric - fint(wl_telluric) + 1.
 
     # resample the wavelength grid
     fint = interp1d(wl_telluric, trans_telluric, bounds_error=False,
