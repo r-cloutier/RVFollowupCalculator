@@ -88,7 +88,7 @@ def nRV_calculator(Kdetsig,
         if sigRV_phot <= 0:
 	    print 'Computing the photon-noise limited RV precision...\n'
             transmission_fname = 'tapas_000001.ipac'
-            wlTAPAS, transTAPAS = np.loadtxt('InputData/%s'%transmission_fname,
+            wlTAPAS, transTAPAS = np.loadtxt('/Users/ryancloutier/Research/RVInformation/RVFollowupCalculator/InputData/%s'%transmission_fname,
                                              skiprows=23).T
             wlTAPAS *= 1e-3  # microns
             SNRtarget, sigRV_phot = _compute_sigRV_phot(band_strs, mags, Teff, logg,
@@ -347,7 +347,7 @@ def _get_absolute_stellar_magnitudes(Ms):
 
     # First set of isochrones (ubvri)
     logages,Mss,Mus,Mbs,Mvs,Mrs,Mis,Mjs,Mhs,Mks = \
-                                np.loadtxt('InputData/isoc_z019_ubvrijhk.dat',
+                                np.loadtxt('/Users/ryancloutier/Research/RVInformation/RVFollowupCalculator/InputData/isoc_z019_ubvrijhk.dat',
                                 usecols=(0,1,7,8,9,10,11,12,13,14)).T
     g = abs(logages-logage) == np.min(abs(logages-logage))
     Mss,Mus,Mbs,Mvs,Mrs,Mis,Mjs,Mhs,Mks = Mss[g],Mus[g],Mbs[g],Mvs[g],Mrs[g], \
@@ -359,7 +359,7 @@ def _get_absolute_stellar_magnitudes(Ms):
                               Mhs[g],Mks[g]
     # Second set of isochrones (ZYJHK)
     logages2,Mss2,MZs,MYs,MJs,MHs,MKs = \
-                                np.loadtxt('InputData/isoc_z019_ZYJHK.dat',
+                                np.loadtxt('/Users/ryancloutier/Research/RVInformation/RVFollowupCalculator/InputData/isoc_z019_ZYJHK.dat',
                                 usecols=(0,1,7,8,9,10,11)).T
     g = abs(logages2-logage) == np.min(abs(logages2-logage))
     Mss2,MZs,MYs,MJs,MHs,MKs = Mss2[g],MZs[g],MYs[g],MJs[g],MHs[g],MKs[g]

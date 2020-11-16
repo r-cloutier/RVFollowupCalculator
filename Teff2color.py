@@ -2,7 +2,7 @@ from imports import *
 
 def get_data():
     '''get theoretical data from Lejeune+1998'''
-    d = np.loadtxt('InputData/LCB98_corrected.tsv',delimiter=';',
+    d = np.loadtxt('/Users/ryancloutier/Research/RVInformation/RVFollowupCalculator/InputData/LCB98_corrected.tsv',delimiter=';',
                    skiprows=51).T
     g = d[0] <= 1e4
     Teff,logg,FeH,U_B,B_V,V_R,V_I,V_K,R_I,J_H,H_K,J_K = d[:,g]

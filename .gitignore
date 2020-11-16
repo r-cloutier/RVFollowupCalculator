@@ -11,3 +11,7 @@ trappist*
 RVFollowupCalculatorv1*
 *tmp*
 *_*csv
+*_output*
+nRV_calculation.ipynb
+/nRV_map
+/InputFiles
